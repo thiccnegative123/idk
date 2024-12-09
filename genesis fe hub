@@ -3,8 +3,7 @@ local Window = Library.CreateLib("Genesis fe hub           MADY BY HAXAREBEST1",
 local Tab = Window:NewTab("hats")
 local Section = Tab:NewSection("fighting skills")
 Section:NewButton("fe crystal dance", "  ", function()
-DisableFlingHealthBar = false
-loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/main/Obfuscations/Neko"))()loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/main/Obfuscations/Krystal%20Dance"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/GenesisFE/Genesis/main/Obfuscations/Krystal%20Dance"))()
 print("Clicked")
 end)
 Section:NewButton("fe bad cop good cop", "  ", function()
