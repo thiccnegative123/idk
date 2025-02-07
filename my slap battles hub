@@ -1,0 +1,114 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "MADE BY HAXAREBEST1";
+    Text = "WELCOME TO THE SLAP BATTLES HUB";
+    Duration = 5
+    })
+
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TwiRwal/TwiWare/main/uilib.lua"))()
+local Window = Library.CreateLib("from thicc negative                      MADE BY HAXAREBEST1", "Ocean")
+local Tab = Window:NewTab("MAIN")
+local Section = Tab:NewSection("ANTIVOIDS")
+Section:NewButton("OP ANTIVOID CANT FALL", "MADE BY ME", function()
+loadstring(game:HttpGet("https://pastebin.com/raw/g1qiyKzY"))();
+print("Clicked")
+end)
+Section:NewButton("boring antivoid", "also made by me", function()
+game.StarterGui:SetCore("SendNotification", {
+    Title = "you can now walk on air";
+    Text = "Made by Haxarebest1";
+    Duration = 5
+    })
+
+local function block1()
+local part1 = Instance.new("Part")
+part1.Anchored = true
+part1.Parent = Workspace
+part1.Size = Vector3.new(1913, 1, 1027)
+part1.Position = Vector3.new(32.3564453, -15.4845371, 85.6070099, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+part1.Rotation = Vector3.new(0, 0, 0)
+part1.Transparency = 1
+part1.Name = "AntiVoidPart"
+end
+
+block1()
+
+print("Clicked")
+end)
+local Section = Tab:NewSection("death cube")
+Section:NewButton("death cube godmode", "AND ALSO MADE BY ME", function()
+game.StarterGui:SetCore("SendNotification", {
+    Title = "MADE BY HAXAREBEST1";
+    Text = "DEATH CUBE IS NOW FRIENDLY";
+    Duration = 5
+    })
+
+local function thecube()
+local cube = workspace.Arena.CubeOfDeathArea["the cube of death(i heard it kills)"]
+cube.CanTouch = False
+end
+
+thecube()
+print("Clicked")
+end)
+
+local Tab = Window:NewTab("OTHER SCRIPTS")
+local Section = Tab:NewSection("SLAP BATTLE HUBS")
+Section:NewButton("slap battles", "SLAP N", function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Slap-Battles-KykyryzoB-Hub-SB-9008"))()
+print("Clicked")
+end)
+local Section = Tab:NewSection("EGDELORD")
+Section:NewButton("slap battles egdelord", "SLAP N", function()
+edgelordsetting = {
+	HideClientVFX = false,
+	SlapstickPush = false
+}
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Donjosx/SBScriptsLink/refs/heads/main/DonjoSx's-edgelord-FE.lua"))()
+print("Clicked")
+end)
+local Section = Tab:NewSection("FE RADIO")
+Section:NewButton("slap battles fe radio", "RADIO", function()
+loadstring(game:HttpGet('https://pastefy.app/Jk1mZ8C0/raw'))()
+print("Clicked")
+end)
+local Section = Tab:NewSection("THIS IS THE END FOR SKIDDED SCRIPTS")
+local Tab = Window:NewTab("TROLLING")
+local Section = Tab:NewSection("TROLL THESE NOOBS")
+local Section = Tab:NewSection("chat bypasser NOT SKIDDED")
+local Section = Tab:NewSection("fack the owner i made everything alone")
+Section:NewButton("my own chat bypasser", "LOL ", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/bxpasser/refs/heads/main/chat"))();
+print("Clicked")
+end)
+Section:NewButton("draw in chat", "draw everything", function()
+loadstring(game:HttpGet("https://pastebin.com/raw/imRPuZBq"))();
+print("Clicked")
+end)
+local Section = Tab:NewSection("it has a fe chat refresher script")
+Section:NewButton("better chat bypasser on the new chat", "swear", function()
+loadstring(game:HttpGet("https://pastebin.com/raw/bL80k7m2"))();
+print("Clicked")
+end)
+local Section = Tab:NewSection("ANOTHER SCRIPT")
+Section:NewButton("fe fake chat", "be a ball in ohio", function()
+loadstring(game:HttpGet("https://pastebin.com/raw/bL80k7m2"))();
+print("Clicked")
+end)
+Section:NewButton("fe ball roll", "be a ball in ohio", function()
+loadstring(game:HttpGet("https://pastebin.com/raw/BZr9bGDy", true))()
+print("Clicked")
+end)
+local Section = Tab:NewSection("THE END OF THE TROLLING SCRIPTS")
+local Tab = Window:NewTab("open/close")
+local Section = Tab:NewSection("open/close")
+Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
+Library:ToggleUI()
+end)
+Section:NewButton("keyboard", "keyboard", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
+print("Clicked")
+end)
+local Tab = Window:NewTab("CREDITS")
+local Section = Tab:NewSection("I MADE EVERYTHING BY MAIN")
+local Section = Tab:NewSection("I STILL HAVE NO HELP")
+local Section = Tab:NewSection("PLS check out the 1000 line antivoid")
