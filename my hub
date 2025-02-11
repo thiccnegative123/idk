@@ -390,7 +390,7 @@ loadstring(game:HttpGet("https://pastebin.com/raw/RzVWVySQ"))()
 print("Clicked")
 end)
 Section:NewButton("talent show", "TalEnT ", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/x9Wh2iH1"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/singing-script/refs/heads/main/talent%20show"))();
 print("Clicked")
 end)
 Section:NewButton("muscle legends", "big muscle ", function()
@@ -493,11 +493,11 @@ print("Clicked")
 end)
 local Section = Tab:NewSection("My other hubs")
 Section:NewButton("MY fe tool pp hub", "ButtonInfo", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/JBX1WpPy"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/my%20fe%20pp%20tool%20hub"))();
 print("Clicked")
 end)
 Section:NewButton("MY mod menu (op)", "ButtonInfo", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/EeG2CS2c"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/chat-hax/refs/heads/main/my%20mod%20menu"))();
 print("Clicked")
 end)
 Section:NewButton("MY genesis fe hub (need require hats)", "ButtonInfo", function()
@@ -505,17 +505,17 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/
 print("Clicked")
 end)
 Section:NewButton("MY Blockman go admin panel (all games)", "ButtonInfo", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/jz6MRbGM"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/chat-hax/refs/heads/main/blockman%20go%20admin%20panel"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("MY OWN SCRIPTS NOT SKIDDED")
 local Section = Tab:NewSection("RESET TO STOP THE SCRIPTS")
 Section:NewButton("FE HELI-SEATER", "look how ugly they are", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/e2fSVf91"))(); 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/heli%20seater"))();
 print("Clicked")
 end)
 Section:NewButton("FE FAKE LAG", "look how ugly they are", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/KBC5NEtJ"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/fake%20lag"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("my weird texter")
@@ -535,15 +535,15 @@ end)
 local Section = Tab:NewSection("my own singing scripts")
 local Section = Tab:NewSection("ONLY WORKS FOR OLD CHAT")
 Section:NewButton("self made", "look how ugly they are", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/0C99ZdcL"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/singing-script/refs/heads/main/neffex%20self%20made"))();
 print("Clicked")
 end)
 Section:NewButton("home town", "from neffex", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/tNCD8Lxe"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/singing-script/refs/heads/main/neffex%20hometown"))();
 print("Clicked")
 end)
 Section:NewButton("numb (kinda sus)", "from neffex", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/XmAxqBDC"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/singing-script/refs/heads/main/neffex%20numb"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("my own sussy storry")
@@ -565,15 +565,15 @@ end)
 local Section = Tab:NewSection("my own sword reaches")
 local Section = Tab:NewSection("bypasses in some games")
 Section:NewButton("good sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/0wPR1t4X"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20small"))();
 print("Clicked")
 end)
 Section:NewButton("BIG sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/L8KVjqVX"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20middle"))();
 print("Clicked")
 end)
 Section:NewButton("VERY MASIVE sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/R6FybrYm"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20big"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("look at a near player")
@@ -584,7 +584,7 @@ end)
 local Tab = Window:NewTab("Help for scripting")
 local Section = Tab:NewSection("Dex explorer")
 Section:NewButton("Dex explorer", "Dex explorer", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/eg7BgVTG"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/DEX-Explorer/refs/heads/main/Mobile.lua"))()
 print("Clicked")
 end)
 local Section = Tab:NewSection("Remote spy")
