@@ -9,7 +9,7 @@ local Window = Library.CreateLib("from thicc negative                      MADE 
 local Tab = Window:NewTab("MAIN")
 local Section = Tab:NewSection("ANTIVOIDS")
 Section:NewButton("OP ANTIVOID CANT FALL", "MADE BY ME", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/g1qiyKzY"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/slap-battles/refs/heads/main/sb%20antivoid%20OP"))();
 print("Clicked")
 end)
 Section:NewButton("boring antivoid", "also made by me", function()
