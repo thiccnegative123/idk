@@ -96,7 +96,7 @@ game:GetService("VoiceChatService"):joinVoice()
 print("Clicked")
 end)
 Section:NewButton("fe antifling", "FLING WORKS", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/6FFfiQ2s"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sytcal/antifling/main/9999"))()
 print("Clicked")
 end)
 Section:NewButton("fe gilios",
@@ -409,8 +409,8 @@ Section:NewButton("Build a boat for treasure (steal boats)", "SPEEDRUN", functio
 loadstring(game:HttpGet(("https://raw.githubusercontent.com/max2007killer/auto-build-not-limit/main/buildaboatv2obs.txt"),true))()
 print("Clicked")
 end)
-Section:NewButton("Build a boat for treasure (autofarm)", "ButtonInfo", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/XRoLLu/Rolly_Hub/main/open-source-trash-loader.exe.yeah"))()
+Section:NewButton("Build a boat for treasure (image loader)", "ButtonInfo", function()
+loadstring(game:HttpGet("https://pastebin.com/raw/91j4CZVF"))();
 print("Clicked")
 end)
 Section:NewButton("chaos", "kill alls", function()
