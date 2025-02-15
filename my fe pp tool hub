@@ -89,6 +89,16 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("flex your weather fe Sing pp", "nice", function() 
+local sword = 
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign")
+if sword then
+    sword.Grip = CFrame.new(1.5, 1.50057149, -1.54937255, 1, 0, 0, 0, 2.46889414e-07, 1, 0, -1, 2.46889414e-07)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
 Section:NewButton("fe public bathroom sim sign pp", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Low fps sign") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("high fps sign") or
