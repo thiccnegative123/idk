@@ -77,8 +77,8 @@ end
 print("Clicked")
 end)
 Section:NewButton("fe Sing pp", "nice", function() 
-local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Low fps sign") or
-game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("high fps sign") or
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Low FPS sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("High FPS sign") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("DonateSign") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ProtestSign")
