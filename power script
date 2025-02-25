@@ -1,0 +1,198 @@
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+local frame = Instance.new("Frame", gui)
+local frame2 = Instance.new("Frame", gui)
+local button = Instance.new("TextButton", frame)
+local button1 = Instance.new("TextButton", frame)
+local button2 = Instance.new("TextButton", frame)
+local button3 = Instance.new("TextButton", frame)
+local button4 = Instance.new("TextButton", frame)
+local button5 = Instance.new("TextButton", frame)
+local button6 = Instance.new("TextButton", frame)
+local button7 = Instance.new("TextButton", frame2)
+local button8 = Instance.new("TextButton", frame)
+local button9 = Instance.new("TextButton", frame)
+
+frame.Size = UDim2.new(0.5,0,0.1,0)
+frame.Position = UDim2.new(0,239,0,-55)
+frame.Draggable = false
+frame.Active = true
+
+frame2.Size = UDim2.new(0.2,0,0.1,0)
+frame2.Position = UDim2.new(0,899,0,332)
+frame2.Draggable = true
+frame2.Active = true
+
+button.Size = UDim2.new(0.2,0,1,0)
+button.Position = UDim2.new(0,0,0,0)
+button.BackgroundColor3 = Color3.fromRGB(243, 0, 40)
+button.Draggable = false
+button.Active = true
+button.Text = "SLAM GROUNDER"
+
+button1.Size = UDim2.new(0.2,0,1,0)
+button1.Position = UDim2.new(0.3,-47,0.2,-7)
+button1.Draggable = false
+button1.Active = true
+button1.BackgroundColor3 = Color3.fromRGB(6, 255, 245)
+button1.Text = "FREEZE"
+
+button2.Size = UDim2.new(0.2,0,1,0)
+button2.Position = UDim2.new(0.3,-47,0.2,-7)
+button2.Draggable = false
+button2.Active = true
+button2.BackgroundColor3 = Color3.fromRGB(6, 255, 245)
+button2.Text = "UNFREEZE"
+button2.Visible = false
+
+button3.Size = UDim2.new(0.2,0,1,0)
+button3.Position = UDim2.new(0.5,-49,0.4,-14)
+button3.Draggable = false
+button3.Active = true
+button3.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
+button3.Text = "WEIRD FLOATING"
+
+button4.Size = UDim2.new(0.2,0,1,0)
+button4.Position = UDim2.new(0.5,-49,0.4,-14)
+button4.Draggable = false
+button4.Active = true
+button4.Text = "NO FLOATING"
+button4.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
+button4.Visible = false
+
+button5.Size = UDim2.new(0.2,0,1,0)
+button5.Position = UDim2.new(0.7,-47,0.6,-22)
+button5.Draggable = false
+button5.Active = true
+button5.Text = "NOCLIP"
+
+button6.Size = UDim2.new(0.2,0,1,0)
+button6.Position = UDim2.new(0.7,-47,0.6,-22)
+button6.Draggable = false
+button6.Active = true
+button6.Text = "UNNOCLIP"
+button6.Visible = false
+
+button7.Size = UDim2.new(0.2,0,1,0)
+button7.Position = UDim2.new(0.8,-345,0.7,-251)
+button7.Draggable = true
+button7.Active = true
+button7.BackgroundColor3 = Color3.fromRGB(140, 255, 244)
+button7.Text = "OPEN/CLOSE"
+
+button8.Size = UDim2.new(0.2,0,1,0)
+button8.Position = UDim2.new(0.8,0,0.7,-27)
+button8.Draggable = false
+button8.Active = true
+button8.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button8.Text = "FOV EXPANDER"
+
+button9.Size = UDim2.new(0.2,0,1,0)
+button9.Position = UDim2.new(0.8,0,0.7,-27)
+button9.Draggable = false
+button9.Active = true
+button9.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button9.Text = "NORMAL FOV"
+button9.Visible = false
+
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+if humanoid then
+    humanoid.WalkSpeed = 50
+    humanoid.JumpPower = 130
+
+    
+    humanoid:GetPropertyChangedSignal("FloorMaterial"):Connect(function()
+        if humanoid.FloorMaterial == Enum.Material.Air then
+wait(1)
+            game.Workspace.Gravity = 1000
+wait(0.3)
+game.Workspace.Gravity = 150
+        end
+    end)
+end
+
+button.MouseButton1Click:Connect(function()
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+if humanoid then
+    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+end
+wait(1)
+humanoid.Sit = true
+end)
+
+button1.MouseButton1Click:Connect(function()
+local Humanoidroot = Game.Players.LocalPlayer.Character.HumanoidRootPart
+Humanoidroot.Anchored = true
+button1.Visible = false
+button2.Visible = true
+end)
+
+button2.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = false
+button2.Visible = false
+button1.Visible = true
+end)
+
+button3.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.Humanoid.HipHeight = 10
+button3.Visible = false
+button4.Visible = true
+end)
+
+button4.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.Humanoid.HipHeight = 1.998
+button4.Visible = false
+button3.Visible = true
+end)
+
+button5.MouseButton1Click:Connect(function()
+local lol = 0
+button5.Visible = false
+button6.Visible = true
+while wait() do
+local character = Game.Players.LocalPlayer.Character
+character.HumanoidRootPart.CanCollide = false
+character.UpperTorso.CanCollide = false
+character.LowerTorso.CanCollide = false
+if lol == 1 then
+break
+end
+if button6.Visible == true then
+lol = lol + 1
+end
+end
+end)
+
+button6.MouseButton1Click:Connect(function()
+button5.Visible = true
+button6.Visible = false
+wait(0.1)
+local character = Game.Players.LocalPlayer.Character
+character.HumanoidRootPart.CanCollide = true
+character.UpperTorso.CanCollide = true
+character.LowerTorso.CanCollide = true
+end)
+button7.MouseButton1Click:Connect(function()
+if frame.Visible == true then
+frame.Visible = false
+elseif frame.Visible == false then
+frame.Visible = true
+end
+end)
+
+button8.MouseButton1Click:Connect(function()
+Game.Workspace.Camera.FieldOfView = 100
+button8.Visible = false
+button9.Visible = true
+end)
+button9.MouseButton1Click:Connect(function()
+Game.Workspace.Camera.FieldOfView = 70
+button8.Visible = true
+button9.Visible = false
+end)
