@@ -17,6 +17,20 @@ local button6 = Instance.new("TextButton", frame)
 local button7 = Instance.new("TextButton", frame2)
 local button8 = Instance.new("TextButton", frame)
 local button9 = Instance.new("TextButton", frame)
+local button10 = Instance.new("TextButton", frame)
+local button11 = Instance.new("TextButton", frame)
+local button12 = Instance.new("TextButton", frame)
+local button13 = Instance.new("TextButton", frame)
+local button14 = Instance.new("TextButton", frame)
+local button15 = Instance.new("TextButton", frame)
+local button16 = Instance.new("TextButton", frame)
+local button17 = Instance.new("TextButton", frame)
+local button18 = Instance.new("TextButton", frame)
+local button19 = Instance.new("TextButton", frame)
+local button20 = Instance.new("TextButton", frame)
+local button21 = Instance.new("TextButton", frame)
+local button22 = Instance.new("TextButton", frame)
+local button23 = Instance.new("TextButton", frame)
 
 frame.Size = UDim2.new(0.5,0,0.1,0)
 frame.Position = UDim2.new(0,239,0,-55)
@@ -55,13 +69,13 @@ button3.Position = UDim2.new(0.5,-49,0.4,-14)
 button3.Draggable = false
 button3.Active = true
 button3.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
-button3.Text = "WEIRD FLOATING"
+button3.Text = "WEIRD FLOATING R15"
 
 button4.Size = UDim2.new(0.2,0,1,0)
 button4.Position = UDim2.new(0.5,-49,0.4,-14)
 button4.Draggable = false
 button4.Active = true
-button4.Text = "NO FLOATING"
+button4.Text = "NO FLOATING R15"
 button4.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
 button4.Visible = false
 
@@ -69,13 +83,13 @@ button5.Size = UDim2.new(0.2,0,1,0)
 button5.Position = UDim2.new(0.7,-47,0.6,-22)
 button5.Draggable = false
 button5.Active = true
-button5.Text = "NOCLIP"
+button5.Text = "NOCLIP R15"
 
 button6.Size = UDim2.new(0.2,0,1,0)
 button6.Position = UDim2.new(0.7,-47,0.6,-22)
 button6.Draggable = false
 button6.Active = true
-button6.Text = "UNNOCLIP"
+button6.Text = "UNNOCLIP R15"
 button6.Visible = false
 
 button7.Size = UDim2.new(0.2,0,1,0)
@@ -99,6 +113,115 @@ button9.Active = true
 button9.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
 button9.Text = "NORMAL FOV"
 button9.Visible = false
+
+button10.Size = UDim2.new(0.1,0,0.8,0)
+button10.Position = UDim2.new(1,2,1,-34)
+button10.Draggable = false
+button10.Active = true
+button10.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button10.Text = ">"
+
+button11.Size = UDim2.new(0.1,0,0.8,0)
+button11.Position = UDim2.new(1,-503,1,-31)
+button11.Draggable = false
+button11.Active = true
+button11.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button11.Text = "<"
+button11.Visible = false
+
+button12.Size = UDim2.new(0.2,0,1,0)
+button12.Position = UDim2.new(0,0,0,0)
+button12.BackgroundColor3 = Color3.fromRGB(243, 0, 40)
+button12.Draggable = false
+button12.Active = true
+button12.Text = "DEFAULT WS"
+button12.Visible = false
+
+button13.Size = UDim2.new(0.2,0,1,0)
+button13.Position = UDim2.new(0,0,0,0)
+button13.BackgroundColor3 = Color3.fromRGB(243, 0, 40)
+button13.Draggable = false
+button13.Active = true
+button13.Text = "FAST SPEED"
+button13.Visible = false
+
+button14.Size = UDim2.new(0.2,0,1,0)
+button14.Position = UDim2.new(0.3,-47,0.2,-7)
+button14.Draggable = false
+button14.Active = true
+button14.BackgroundColor3 = Color3.fromRGB(6, 255, 245)
+button14.Text = "DEFAULT JP"
+button14.Visible = false
+
+button15.Size = UDim2.new(0.2,0,1,0)
+button15.Position = UDim2.new(0.3,-47,0.2,-7)
+button15.Draggable = false
+button15.Active = true
+button15.BackgroundColor3 = Color3.fromRGB(6, 255, 245)
+button15.Text = "MASSIVE JP"
+button15.Visible = false
+
+button16.Size = UDim2.new(0.2,0,1,0)
+button16.Position = UDim2.new(0.5,-49,0.4,-14)
+button16.Draggable = false
+button16.Active = true
+button16.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
+button16.Text = "WEIRD STOMP"
+button16.Visible = false
+
+button17.Size = UDim2.new(0.2,0,1,0)
+button17.Position = UDim2.new(0.5,-49,0.4,-14)
+button17.Draggable = false
+button17.Active = true
+button17.Text = "UNSTOMP!!!"
+button17.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
+button17.Visible = false
+
+button18.Size = UDim2.new(0.2,0,1,0)
+button18.Position = UDim2.new(0.7,-47,0.6,-22)
+button18.Draggable = false
+button18.Active = true
+button18.Text = "FAKE LAG ON"
+button18.Visible = false
+
+button19.Size = UDim2.new(0.2,0,1,0)
+button19.Position = UDim2.new(0.7,-47,0.6,-22)
+button19.Draggable = false
+button19.Active = true
+button19.Text = "FAKE LAG OFF"
+button19.Visible = false
+
+button20.Size = UDim2.new(0.2,0,1,0)
+button20.Position = UDim2.new(0.8,0,0.7,-27)
+button20.Draggable = false
+button20.Active = true
+button20.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button20.Text = "WEIRD FLOAT R6"
+button20.Visible = false
+
+button21.Size = UDim2.new(0.2,0,1,0)
+button21.Position = UDim2.new(0.8,0,0.7,-27)
+button21.Draggable = false
+button21.Active = true
+button21.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button21.Text = " NO WEIRD FLOAT R6"
+button21.Visible = false
+
+button22.Size = UDim2.new(0.2,0,1,0)
+button22.Position = UDim2.new(0.99,-86,0.9,2)
+button22.Draggable = false
+button22.Active = true
+button22.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button22.Text = "NOCLIP R6"
+button22.Visible = false
+
+button23.Size = UDim2.new(0.2,0,1,0)
+button23.Position = UDim2.new(0.99,-86,0.9,2)
+button23.Draggable = false
+button23.Active = true
+button23.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button23.Text = "UNNOCLIP R6"
+button23.Visible = false
 
 
 local player = game.Players.LocalPlayer
@@ -157,27 +280,25 @@ button4.Visible = false
 button3.Visible = true
 end)
 
+local lol1 = false
+
 button5.MouseButton1Click:Connect(function()
-local lol = 0
+lol1 = true
 button5.Visible = false
 button6.Visible = true
-while wait() do
+while lol1 do
+wait()
 local character = Game.Players.LocalPlayer.Character
 character.HumanoidRootPart.CanCollide = false
 character.UpperTorso.CanCollide = false
 character.LowerTorso.CanCollide = false
-if lol == 1 then
-break
-end
-if button6.Visible == true then
-lol = lol + 1
-end
 end
 end)
 
 button6.MouseButton1Click:Connect(function()
 button5.Visible = true
 button6.Visible = false
+lol1 = false
 wait(0.1)
 local character = Game.Players.LocalPlayer.Character
 character.HumanoidRootPart.CanCollide = true
@@ -201,4 +322,166 @@ button9.MouseButton1Click:Connect(function()
 Game.Workspace.Camera.FieldOfView = 70
 button8.Visible = true
 button9.Visible = false
+end)
+
+button10.MouseButton1Click:Connect(function()
+button.Visible = false
+button1.Visible = false
+button2.Visible = false
+button3.Visible = false
+button4.Visible = false
+button5.Visible = false
+button6.Visible = false
+button8.Visible = false
+button9.Visible = false
+button10.Visible = false
+button11.Visible = true
+button12.Visible = true
+button14.Visible = true
+button16.Visible = true
+button18.Visible = true
+button20.Visible = true
+button22.Visible = true
+end)
+
+button11.MouseButton1Click:Connect(function()
+button.Visible = true
+button1.Visible = true
+button2.Visible = false
+button3.Visible = true
+button4.Visible = false
+button5.Visible = true
+button6.Visible = false
+button8.Visible = true
+button9.Visible = false
+button10.Visible = true
+button11.Visible = false
+button12.Visible = false
+button13.Visible = false
+button14.Visible = false
+button15.Visible = false
+button16.Visible = false
+button17.Visible = false
+button18.Visible = false
+button19.Visible = false
+button20.Visible = false
+button21.Visible = false
+button22.Visible = false
+button23.Visible = false
+end)
+
+button12.MouseButton1Click:Connect(function()
+game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+button12.Visible = false
+button13.Visible = true
+end)
+
+button13.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 50
+button13.Visible = false
+button12.Visible = true
+end)
+
+button14.MouseButton1Click:Connect(function()
+game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+button14.Visible = false
+button15.Visible = true
+end)
+
+button15.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.Humanoid.JumpPower = 130
+button15.Visible = false
+button14.Visible = true
+end)
+
+local lol = false
+
+button16.MouseButton1Click:Connect(function()
+button16.Visible = false
+button17.Visible = true
+lol = true
+local humanoid = Game.Players.LocalPlayer.Character.Humanoid
+while lol do
+wait(0.35)
+humanoid.PlatformStand = true
+wait(0.44)
+humanoid.Sit = true
+end
+end)
+
+button17.MouseButton1Click:Connect(function()
+lol = false
+wait(0.2)
+local humanoid = Game.Players.LocalPlayer.Character.Humanoid
+humanoid.PlatformStand = false
+wait(0.44)
+humanoid.Sit = false
+button17.Visible = false
+button16.Visible = true
+end)
+
+local lol2 = false
+
+button18.MouseButton1Click:Connect(function()
+button18.Visible = false
+button19.Visible = true
+lol2 = true
+while lol2 == true do
+wait(0.03)
+    local player = Game.Players.LocalPlayer
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+        local lol69 = player.Character.HumanoidRootPart
+        lol69.Anchored = true
+        wait(0.05)
+        lol69.Anchored = false
+end
+end
+end)
+
+button19.MouseButton1Click:Connect(function()
+lol2 = false
+button19.Visible = false
+button18.Visible = true
+ local player = Game.Players.LocalPlayer
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+        local lol69 = player.Character.HumanoidRootPart
+        lol69.Anchored = false
+        wait(0.05)
+        lol69.Anchored = false
+end
+end)
+
+button20.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.Humanoid.HipHeight = 10
+button20.Visible = false
+button21.Visible = true
+end)
+
+button21.MouseButton1Click:Connect(function()
+Game.Players.LocalPlayer.Character.Humanoid.HipHeight = 0
+button20.Visible = false
+button21.Visible = true
+end)
+
+local lol3 = false
+button22.MouseButton1Click:Connect(function()
+button22.Visible = false
+button23.Visible = true
+lol3 = true
+while lol3 do
+wait()
+local character = Game.Players.LocalPlayer.Character
+character.Torso.CanCollide = false
+character.Head.CanCollide = false
+end
+end)
+
+button23.MouseButton1Click:Connect(function()
+lol3 = false
+wait(0.01)
+button23.Visible = false
+button22.Visible = true
+local character = Game.Players.LocalPlayer.Character
+character.Torso.CanCollide = true
+character.Head.CanCollide = true
 end)
