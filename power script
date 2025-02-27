@@ -459,8 +459,8 @@ end)
 
 button21.MouseButton1Click:Connect(function()
 Game.Players.LocalPlayer.Character.Humanoid.HipHeight = 0
-button20.Visible = false
-button21.Visible = true
+button20.Visible = true
+button21.Visible = false
 end)
 
 local lol3 = false
