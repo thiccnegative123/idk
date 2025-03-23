@@ -526,6 +526,18 @@ Section:NewButton("FE POWERS", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/power%20script"))();
 print("Clicked")
 end)
+Section:NewButton("FE SUICIDE", "look how ugly they are", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/fnf/refs/heads/main/fe%20suicide%20roblox%20script"))();
+print("Clicked")
+end)
+Section:NewButton("FE FNF R6", "look how ugly they are", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/fnf/refs/heads/main/fnf%20roblox%20script"))();
+print("Clicked")
+end)
+Section:NewButton("FE FNF R15", "look how ugly they are", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/fnf/refs/heads/main/fnf%20script%20(r15)"))();
+print("Clicked")
+end)
 Section:NewButton("FE FAKE LAG", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/fake%20lag"))();
 print("Clicked")
