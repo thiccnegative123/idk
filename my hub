@@ -608,6 +608,10 @@ Section:NewButton("VERY MASIVE sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgs
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20big"))();
 print("Clicked")
 end)
+Section:NewButton("CUSTOM DUELS REACH SCRIPT", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/custom%20fuels%20reach%20script"))();
+print("Clicked")
+end)
 local Section = Tab:NewSection("look at a near player")
 Section:NewButton("look at near player", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/zephyr10101/PlayerLock/main/Script",true))()
