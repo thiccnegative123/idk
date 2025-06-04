@@ -557,7 +557,7 @@ end)
 local Tab = Window:NewTab("Help for scripting")
 local Section = Tab:NewSection("Dex explorer")
 Section:NewButton("Dex explorer", "Dex explorer", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/KUTCEy7b"))();
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Keyless-mobile-dex-17888"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("Remote spy")
