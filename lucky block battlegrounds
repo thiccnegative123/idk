@@ -1,0 +1,143 @@
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+local frame = Instance.new("Frame", gui)
+local button1 = Instance.new("TextButton", frame)
+local button2 = Instance.new("TextButton", frame)
+local button3 = Instance.new("TextButton", frame)
+local button4 = Instance.new("TextButton", frame)
+local button5 = Instance.new("TextButton", frame)
+local button6 = Instance.new("TextButton", frame)
+local button7 = Instance.new("TextButton", frame)
+local button8 = Instance.new("TextButton", frame)
+local button9 = Instance.new("TextButton", frame)
+local button10 = Instance.new("TextButton", frame)
+local offbutton = Instance.new("TextButton", gui)
+
+
+frame.Size = UDim2.new(0.6,0,0.5,0)
+frame.Position = UDim2.new(0.3,-84,0.4,-69)
+frame.Active = true
+frame.Draggable = true
+
+button1.Size = UDim2.new(0.15,0,0.3,0)
+button1.Position = UDim2.new(0.5,-272,0.5,-61)
+button1.Text = "Lucky block 1x"
+button1.Active = true
+button1.Draggable = false
+
+button2.Size = UDim2.new(0.15,0,0.3,0)
+button2.Position = UDim2.new(0.5,-172,0.5,-61)
+button2.Text = "Super block 1x"
+button2.Active = true
+button2.Draggable = false
+
+button3.Size = UDim2.new(0.15,0,0.3,0)
+button3.Position = UDim2.new(0.5,-72,0.5,-61)
+button3.Text = "Diamond block 1x"
+button3.Active = true
+button3.Draggable = false
+
+button4.Size = UDim2.new(0.15,0,0.3,0)
+button4.Position = UDim2.new(0.5,28,0.5,-61)
+button4.Text = "Rainbow block 1x"
+button4.Active = true
+button4.Draggable = false
+
+button5.Size = UDim2.new(0.15,0,0.3,0)
+button5.Position = UDim2.new(0.5,128,0.5,-61)
+button5.Text = "Galaxy block 1x"
+button5.Active = true
+button5.Draggable = false
+
+button6.Size = UDim2.new(0.15,0,0.3,0)
+button6.Position = UDim2.new(0.5,-272,0.88,-61)
+button6.Text = "Loop lucky block"
+button6.Active = true
+button6.Draggable = false
+
+button7.Size = UDim2.new(0.15,0,0.3,0)
+button7.Position = UDim2.new(0.5,-172,0.88,-61)
+button7.Text = "Loop super block"
+button7.Active = true
+button7.Draggable = false
+
+button8.Size = UDim2.new(0.15,0,0.3,0)
+button8.Position = UDim2.new(0.5,-72,0.88,-61)
+button8.Text = "Loop Diamond block"
+button8.Active = true
+button8.Draggable = false
+
+button9.Size = UDim2.new(0.15,0,0.3,0)
+button9.Position = UDim2.new(0.5,28,0.88,-61)
+button9.Text = "Loop Rainbow block"
+button9.Active = true
+button9.Draggable = false
+
+button10.Size = UDim2.new(0.15,0,0.3,0)
+button10.Position = UDim2.new(0.5,128,0.88,-61)
+button10.Text = "Loop galaxy block"
+button10.Active = true
+button10.Draggable = false
+
+offbutton.Size = UDim2.new(0.08,0,0.15,0)
+offbutton.Position = UDim2.new(0.5,-404,0.88,-285)
+offbutton.Text = "on/off"
+offbutton.Active = true
+offbutton.Draggable = true
+
+button1.MouseButton1Click:Connect(function()
+game:GetService("ReplicatedStorage").SpawnLuckyBlock:FireServer()
+end)
+
+button2.MouseButton1Click:Connect(function()
+game:GetService("ReplicatedStorage").SpawnSuperBlock:FireServer()
+end)
+
+button3.MouseButton1Click:Connect(function()
+game:GetService("ReplicatedStorage").SpawnDiamondBlock:FireServer()
+end)
+
+button4.MouseButton1Click:Connect(function()
+game:GetService("ReplicatedStorage").SpawnRainbowBlock:FireServer()
+end)
+
+button5.MouseButton1Click:Connect(function()
+game:GetService("ReplicatedStorage").SpawnGalaxyBlock:FireServer()
+end)
+
+button6.MouseButton1Click:Connect(function()
+while wait() do
+game:GetService("ReplicatedStorage").SpawnLuckyBlock:FireServer()
+end
+end)
+
+button7.MouseButton1Click:Connect(function()
+while wait() do
+game:GetService("ReplicatedStorage").SpawnSuperBlock:FireServer()
+end
+end)
+
+button8.MouseButton1Click:Connect(function()
+while wait() do
+game:GetService("ReplicatedStorage").SpawnDiamondBlock:FireServer()
+end
+end)
+
+button9.MouseButton1Click:Connect(function()
+while wait() do
+game:GetService("ReplicatedStorage").SpawnRainbowBlock:FireServer()
+end
+end)
+
+button10.MouseButton1Click:Connect(function()
+while wait() do
+game:GetService("ReplicatedStorage").SpawnGalaxyBlock:FireServer()
+end
+end)
+
+offbutton.MouseButton1Click:Connect(function()
+if frame.Visible == true then
+frame.Visible = false
+elseif frame.Visible == false then
+frame.Visible = true
+end
+end)
