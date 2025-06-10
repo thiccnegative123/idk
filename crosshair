@@ -1,0 +1,10 @@
+local humanoid = Game.Players.LocalPlayer.Character.Humanoid
+local player = game.Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+local frame = Instance.new("Frame", gui)
+
+frame.Size = UDim2.new(0.005,0,0.01,0)
+frame.Position = UDim2.new(0.5,-3,0,146)
+frame.Draggable = false
+frame.Active = false
