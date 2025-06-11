@@ -297,7 +297,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-l
 print("Clicked")
 end)
 Section:NewButton("redz blox fruit", "DACE FASTER", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/newredz/BloxFruits/refs/heads/main/Source.luau"))(Settings)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Scripts/refs/heads/main/main.luau"))(Settings)
 print("Clicked")
 end)
 Section:NewButton("blox fruit speed hub", "DACE FASTER", function()
