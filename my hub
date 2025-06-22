@@ -195,6 +195,10 @@ Section:NewButton("draw in chat", "draw everything", function()
 loadstring(game:HttpGet("https://pastebin.com/raw/imRPuZBq"))();
 print("Clicked")
 end)
+Section:NewButton("chat hax", "draw everything", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/chat%20hax"))();
+print("Clicked")
+end)
 Section:NewButton("fe glitch", "more like fe dummy v69", function()
 loadstring(game:HttpGet(('https://pastefy.app/s6DE4bNC/raw'),true))() --Z X F E
 print("Clicked")
