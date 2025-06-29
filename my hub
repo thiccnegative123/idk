@@ -405,6 +405,10 @@ Section:NewButton("MY slap battles hub", "EZ win", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/my%20slap%20battles%20hub"))()
 print("Clicked")
 end)
+Section:NewButton("Zombie attack", "EZ win", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/zombie%20attack"))();
+print("Clicked")
+end)
 Section:NewButton("talent show", "TalEnT ", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/singing-script/refs/heads/main/talent%20show"))();
 print("Clicked")
