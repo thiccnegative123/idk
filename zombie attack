@@ -1,0 +1,132 @@
+local number = 0
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+gui.ResetOnSpawn = false
+local frame = Instance.new("Frame", gui)
+local button = Instance.new("TextButton", frame)
+local button1 = Instance.new("TextButton", frame)
+local button2 = Instance.new("TextButton", frame)
+
+frame.Size = UDim2.new(0.31,0,0.31)
+frame.Position = UDim2.new(0,628,0,107)
+frame.Draggable = true
+frame.Active = true
+
+button.Size = UDim2.new(0.4,0,0.4,0)
+button.Position = UDim2.new(0,2,0,1)
+button.Draggable = false
+button.Active = true
+button.Text = "bigger head"
+
+button1.Size = UDim2.new(0.4,0,0.4,0)
+button1.Position = UDim2.new(0,83,0,66)
+button1.Draggable = false
+button1.Active = true
+button1.Text = "MASSIVE HEAD"
+
+button2.Size = UDim2.new(0.4,0,0.4,0)
+button2.Position = UDim2.new(0,169,0,0)
+button2.Draggable = false
+button2.Active = true
+button2.Text = "BIGGEST HEAD"
+
+
+local player = game.Players.LocalPlayer.Character
+
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Made by Haxarebest1";
+    Text = "WELCOME TO THE BEST ZOMBIE ATTACK SCRIPT!";
+    Duration = 5
+    })
+
+
+button.MouseButton1Click:Connect(function()
+number = 1
+while number == 1 do
+wait()
+local enemiesFolder = workspace:FindFirstChild("enemies")
+if enemiesFolder then
+    for _, enemy in pairs(enemiesFolder:GetChildren()) do
+        local head = enemy:FindFirstChild("Head")
+        if head and head:IsA("BasePart") then
+            head.Size = Vector3.new(8, 8, 8)
+head.CanCollide = true
+head.Massless = true
+        end
+    end
+else
+    warn("Folder 'enemies' not found in Workspace.")
+end
+local bossFolder = workspace:WaitForChild("BossFolder")
+
+for _, boss in pairs(bossFolder:GetChildren()) do
+	local head = boss:FindFirstChild("Head")
+	if head then
+		head.Size = Vector3.new(8, 8, 8)
+		head.CanCollide = true
+		head.Massless = true
+	end
+end
+end
+end)
+
+button1.MouseButton1Click:Connect(function()
+number = 2
+while number == 2 do
+wait()
+local enemiesFolder = workspace:FindFirstChild("enemies")
+if enemiesFolder then
+    for _, enemy in pairs(enemiesFolder:GetChildren()) do
+        local head = enemy:FindFirstChild("Head")
+        if head and head:IsA("BasePart") then
+            head.Size = Vector3.new(15, 15, 15)
+head.CanCollide = true
+head.Massless = true
+        end
+    end
+else
+    warn("Folder 'enemies' not found in Workspace.")
+end
+local bossFolder = workspace:WaitForChild("BossFolder")
+
+for _, boss in pairs(bossFolder:GetChildren()) do
+	local head = boss:FindFirstChild("Head")
+	if head then
+		head.Size = Vector3.new(15, 15, 15)
+		head.CanCollide = true
+		head.Massless = true
+	end
+end
+end
+end)
+
+
+button2.MouseButton1Click:Connect(function()
+number = 3
+while number == 3 do
+wait()
+local enemiesFolder = workspace:FindFirstChild("enemies")
+
+if enemiesFolder then
+    for _, enemy in pairs(enemiesFolder:GetChildren()) do
+        local head = enemy:FindFirstChild("Head")
+        if head and head:IsA("BasePart") then
+            head.Size = Vector3.new(69, 69, 69)
+head.CanCollide = true
+head.Massless = true
+        end
+    end
+else
+    warn("Folder 'enemies' not found in Workspace.")
+end
+local bossFolder = workspace:WaitForChild("BossFolder")
+
+for _, boss in pairs(bossFolder:GetChildren()) do
+	local head = boss:FindFirstChild("Head")
+	if head then
+		head.Size = Vector3.new(69, 69, 69)
+		head.CanCollide = true
+		head.Massless = true
+	end
+end
+end
+end)
