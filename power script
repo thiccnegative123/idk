@@ -17,6 +17,15 @@ local button6 = Instance.new("TextButton", frame)
 local button7 = Instance.new("TextButton", frame2)
 local button8 = Instance.new("TextButton", frame)
 local button9 = Instance.new("TextButton", frame)
+local button10 = Instance.new("TextButton", frame)
+local button11 = Instance.new("TextButton", frame)
+local button12 = Instance.new("TextButton", frame)
+local button13 = Instance.new("TextButton", frame)
+local button14 = Instance.new("TextButton", frame)
+local button15 = Instance.new("TextButton", frame)
+local button16 = Instance.new("TextButton", frame)
+local button17 = Instance.new("TextButton", frame)
+
 
 frame.Size = UDim2.new(0.5,0,0.1,0)
 frame.Position = UDim2.new(0,239,0,-55)
@@ -99,6 +108,70 @@ button9.Active = true
 button9.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
 button9.Text = "NORMAL FOV"
 button9.Visible = false
+
+button10.Size = UDim2.new(0.1,0,0.75,0)
+button10.Position = UDim2.new(0.5,230,0.7,-21)
+button10.Draggable = false
+button10.Active = true
+button10.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button10.Text = ">"
+button10.Visible = true
+
+button11.Size = UDim2.new(0.2,0,1,0)
+button11.Position = UDim2.new(0,0,0,0)
+button11.BackgroundColor3 = Color3.fromRGB(243, 0, 40)
+button11.Draggable = false
+button11.Active = true
+button11.Visible = false
+button11.Text = "default speed"
+
+button12.Size = UDim2.new(0.2,0,1,0)
+button12.Position = UDim2.new(0,0,0,0)
+button12.BackgroundColor3 = Color3.fromRGB(243, 0, 40)
+button12.Draggable = false
+button12.Active = true
+button12.Visible = false
+button12.Text = "fast speed"
+
+button13.Size = UDim2.new(0.2,0,1,0)
+button13.Position = UDim2.new(0.3,-47,0.2,-7)
+button13.Draggable = false
+button13.Active = true
+button13.BackgroundColor3 = Color3.fromRGB(6, 255, 245)
+button13.Visible = false
+button13.Text = "default jumppower"
+
+button14.Size = UDim2.new(0.2,0,1,0)
+button14.Position = UDim2.new(0.3,-47,0.2,-7)
+button14.Draggable = false
+button14.Active = true
+button14.BackgroundColor3 = Color3.fromRGB(6, 255, 245)
+button14.Visible = false
+button14.Text = "big jumppower"
+
+button15.Size = UDim2.new(0.2,0,1,0)
+button15.Position = UDim2.new(0.5,-49,0.4,-14)
+button15.Draggable = false
+button15.Active = true
+button15.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
+button15.Visible = false
+button15.Text = "Stomping"
+
+button16.Size = UDim2.new(0.2,0,1,0)
+button16.Position = UDim2.new(0.5,-49,0.4,-14)
+button16.Draggable = false
+button16.Active = true
+button16.BackgroundColor3 = Color3.fromRGB(252, 250, 255)
+button16.Visible = false
+button16.Text = "stop stomping"
+
+button17.Size = UDim2.new(0.1,0,0.75,0)
+button17.Position = UDim2.new(0.5,-274,0.7,-20)
+button17.Draggable = true
+button17.Active = true
+button17.BackgroundColor3 = Color3.fromRGB(0, 85, 127)
+button17.Text = "<"
+button17.Visible = false
 
 
 local player = game.Players.LocalPlayer
@@ -201,4 +274,89 @@ button9.MouseButton1Click:Connect(function()
 Game.Workspace.Camera.FieldOfView = 70
 button8.Visible = true
 button9.Visible = false
+end)
+
+button10.MouseButton1Click:Connect(function()
+button.Visible = false
+button1.Visible = false
+button2.Visible = false
+button3.Visible = false
+button4.Visible = false
+button5.Visible = false
+button6.Visible = false
+button8.Visible = false
+button9.Visible = false
+button10.Visible = false
+button11.Visible = true
+button13.Visible = true
+button15.Visible = true
+button17.Visible = true
+end)
+
+button11.MouseButton1Click:Connect(function()
+humanoid.WalkSpeed = 16
+button11.Visible = false
+button12.Visible = true
+end)
+
+button12.MouseButton1Click:Connect(function()
+humanoid.WalkSpeed = 50
+button12.Visible = false
+button11.Visible = true
+end)
+
+button13.MouseButton1Click:Connect(function()
+humanoid.JumpPower = 50
+button13.Visible = false
+button14.Visible = true
+end)
+
+button14.MouseButton1Click:Connect(function()
+humanoid.JumpPower = 130
+button14.Visible = false
+button13.Visible = true
+end)
+
+local stomp = 1
+
+button15.MouseButton1Click:Connect(function()
+local humanoid = Game.Players.LocalPlayer.Character.Humanoid
+button15.Visible = false
+button16.Visible = true
+stomp = 1
+while wait() do
+humanoid.HipHeight = 3.333
+wait(0.1)
+humanoid.HipHeight = 1.998
+wait()
+humanoid.Sit = true
+wait(0.3)
+humanoid.Sit = false
+if stomp == 2 then
+break
+end
+end
+end)
+
+button16.MouseButton1Click:Connect(function()
+stomp = 2
+button16.Visible = false
+button15.Visible = true
+end)
+
+button17.MouseButton1Click:Connect(function()
+button.Visible = true
+button1.Visible = true
+button3.Visible = true
+button5.Visible = true
+button7.Visible = true
+button9.Visible = true
+button10.Visible = true
+button11.Visible = false
+button12.Visible = false
+button13.Visible = false
+button14.Visible = false
+button15.Visible = false
+button16.Visible = false
+button17.Visible = false
 end)
