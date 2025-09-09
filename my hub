@@ -87,8 +87,8 @@ Section:NewButton("fe antifling", "FLING WORKS", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sytcal/antifling/main/9999"))()
 print("Clicked")
 end)
-Section:NewButton("fe antifling V2", "FLING WORKS", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/antifling%20v2"))();
+Section:NewButton("fe touch fling", "FLING WORKS", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LiarRise/FLN-X/refs/heads/main/README.md"))()
 print("Clicked")
 end)
 Section:NewButton("fe gilios",
