@@ -21,8 +21,7 @@ game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Classic") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sharpened") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Medical") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Linked") or
-game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Default") or
-game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ClassicSwordV2")
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Default")
 if sword then
     sword.Grip = CFrame.new(2, 1.25, 0, 0.0995037332, 0.995037258, 0, 0.995037258, -0.0995035842, 0, 0, 0, -1)
 else
@@ -176,6 +175,27 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("fe valley prision Gauzes pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Gauzes") 
+if sword then
+    sword.Grip = CFrame.new(1.5, 1.30000055, -0.50001204, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe valley prision MilkTea pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Milk Tea").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Milk Tea")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(1.5, -0.504455984, -1.5, 1, 0, 0, 0, 2.46889243e-07, 0.999999464, 0, -0.999999344, 1.38972965e-07)
+else
+    warn("Milk Tea not found or not a Tool!")
+end
+print("Clicked")
+end)
 local Section = Tab:NewSection("the end off the pp scripts")
 local Tab = Window:NewTab("open close")
 local Section = Tab:NewSection("keyboard")
@@ -188,6 +208,6 @@ Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
 Library:ToggleUI()
 end)
 local Tab = Window:NewTab("Credits")
-local Section = Tab:NewSection("ONLY 11 OP PP SCRIPTS")
+local Section = Tab:NewSection("ONLY 18 OP PP SCRIPTS")
 local Section = Tab:NewSection("I COULDNT FIND A GOOD GAME")
 local Section = Tab:NewSection("WITH TOOLS!!!")
