@@ -175,6 +175,18 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("fe rate my avatar pizza pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Pizza").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Pizza")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(1.5, 1.5, -0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Pizza not found!!")
+end
+print("Clicked")
+end)
 Section:NewButton("fe valley prision Gauzes pp", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Gauzes") 
 if sword then
@@ -208,6 +220,6 @@ Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
 Library:ToggleUI()
 end)
 local Tab = Window:NewTab("Credits")
-local Section = Tab:NewSection("ONLY 18 OP PP SCRIPTS")
+local Section = Tab:NewSection("ONLY 19 OP PP SCRIPTS")
 local Section = Tab:NewSection("I COULDNT FIND A GOOD GAME")
 local Section = Tab:NewSection("WITH TOOLS!!!")
