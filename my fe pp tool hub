@@ -187,6 +187,18 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("fe rate my avatar Bloxy Cola pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("BloxyCola").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("BloxyCola")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(-1.5, -0.5, -1.50001001, 0, -0.999999344, 1.38972965e-07, 0, 2.46889243e-07, 0.999999464, -1, 0, 0)
+else
+    warn("Bloxy Cola not found!!")
+end
+print("Clicked")
+end)
 Section:NewButton("fe valley prision Gauzes pp", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Gauzes") 
 if sword then
@@ -220,6 +232,6 @@ Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
 Library:ToggleUI()
 end)
 local Tab = Window:NewTab("Credits")
-local Section = Tab:NewSection("ONLY 19 OP PP SCRIPTS")
+local Section = Tab:NewSection("ONLY 20 OP PP SCRIPTS")
 local Section = Tab:NewSection("I COULDNT FIND A GOOD GAME")
 local Section = Tab:NewSection("WITH TOOLS!!!")
