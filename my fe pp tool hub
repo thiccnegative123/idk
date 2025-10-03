@@ -21,7 +21,8 @@ game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Classic") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sharpened") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Medical") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Linked") or
-game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Default")
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Default") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ClassicSwordV2")
 if sword then
     sword.Grip = CFrame.new(2, 1.25, 0, 0.0995037332, 0.995037258, 0, 0.995037258, -0.0995035842, 0, 0, 0, -1)
 else
