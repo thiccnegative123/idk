@@ -233,6 +233,27 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("The spades diner regular soda pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Regular Soda").Enabled = false
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Regular Soda")
+if sword then
+    sword.Grip = CFrame.new(1.50999022, 1.00999975, -0.601000667, 0.28366217, 0.90109396, -0.32797116, 0.166515514, -0.383110791, -0.908569634, -0.944355845, 0.203114495, -0.258720219)
+else
+    warn("Soda not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("papers pls drink/bottle pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Drink").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Drink")
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(1.60009992, 0.500001013, -1.200001, 0.216986179, 0.961344242, 0.169510886, 0, 0.173648104, -0.984807611, -0.976174712, 0.21368964, 0.0376792289)
+else
+    warn("drink not found!!")
+end
+print("Clicked")
+end)
 local Section = Tab:NewSection("the end off the pp scripts")
 local Tab = Window:NewTab("open close")
 local Section = Tab:NewSection("keyboard")
@@ -245,6 +266,6 @@ Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
 Library:ToggleUI()
 end)
 local Tab = Window:NewTab("Credits")
-local Section = Tab:NewSection("ONLY 20 OP PP SCRIPTS")
+local Section = Tab:NewSection("ONLY 23 OP PP SCRIPTS")
 local Section = Tab:NewSection("I COULDNT FIND A GOOD GAME")
 local Section = Tab:NewSection("WITH TOOLS!!!")
