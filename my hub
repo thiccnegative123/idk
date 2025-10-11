@@ -305,6 +305,12 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-l
 print("Clicked")
 end)
 Section:NewButton("redz blox fruit", "DACE FASTER", function()
+local Settings = {
+  JoinTeam = "Marines"; -- Pirates/Marines
+  Translator = true; -- true/false
+}
+
+getgenv().BETA_VERSION = true
 loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Scripts/refs/heads/main/main.luau"))(Settings)
 print("Clicked")
 end)
@@ -414,7 +420,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/
 print("Clicked")
 end)
 Section:NewButton("talent show", "TalEnT ", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/singing-script/refs/heads/main/talent%20show"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/talent-show/refs/heads/main/my%20talent%20show%20hub"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("games with key systems")
@@ -437,6 +443,10 @@ end)
 local Section = Tab:NewSection("THE END OF THE GAMES SCRIPTS")
 local Tab = Window:NewTab("Chat bypasser")
 local Section = Tab:NewSection("chat bypasser")
+Section:NewButton("chat bypasser", "LOL ", function()
+loadstring(game:HttpGet("https://gist.githubusercontent.com/mert134/358b6c0b43e67f75dd4c8f1fc17af692/raw/eeeb6479868b3aaee57d8b60559e6d1aae13d17d/gistfile1.txt"))()
+print("Clicked")
+end)
 local Section = Tab:NewSection("chat bypasser NOT SKIDDED")
 local Section = Tab:NewSection("fack the owner i made everything alone")
 Section:NewButton("my own chat bypasser", "LOL ", function()
@@ -591,5 +601,5 @@ local Tab = Window:NewTab("credits and more")
 local Section = Tab:NewSection("i did everything alone")
 local Section = Tab:NewSection("my discord user is haxarebest1")
 local Section = Tab:NewSection("one of the best scripts in this hub are")
-local Section = Tab:NewSection("my chat bypasser v2")
+local Section = Tab:NewSection("my own game scriotd")
 local Section = Tab:NewSection("vc anti ban")
