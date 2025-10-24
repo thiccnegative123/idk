@@ -492,6 +492,10 @@ Section:NewButton("FE HELI-SEATER", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/heli%20seater"))();
 print("Clicked")
 end)
+Section:NewButton("MY ANIMATION GUI", "look how ugly they are", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/fnf/refs/heads/main/my%20animation%20GUI"))();
+print("Clicked")
+end)
 Section:NewButton("FE POWERS", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/power%20script"))();
 print("Clicked")
