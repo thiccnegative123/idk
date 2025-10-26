@@ -243,14 +243,14 @@ else
 end
 print("Clicked")
 end)
-Section:NewButton("papers pls drink/bottle pp", "nice", function() 
-game.Players.LocalPlayer.Backpack:FindFirstChild("Drink").Enabled = false
+Section:NewButton("papers pls beans pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Beans").Enabled = false
 local player = game.Players.LocalPlayer
-local sword = player.Backpack:FindFirstChild("Drink")
+local sword = player.Backpack:FindFirstChild("Beans")
 if sword and sword:IsA("Tool") then
-    sword.Grip = CFrame.new(1.60009992, 0.500001013, -1.200001, 0.216986179, 0.961344242, 0.169510886, 0, 0.173648104, -0.984807611, -0.976174712, 0.21368964, 0.0376792289)
+    sword.Grip = CFrame.new(1.50000012, 0.600000024, 1.5, 1, 0, 0, 0, -4.53206965e-08, -0.999999821, 0, 0.999999762, -3.71550435e-08)
 else
-    warn("drink not found!!")
+    warn("beans not found!!")
 end
 print("Clicked")
 end)
