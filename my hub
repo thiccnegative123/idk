@@ -415,6 +415,10 @@ Section:NewButton("MY slap battles hub", "EZ win", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/slap-battles/refs/heads/main/slap%20battles%20hub"))();
 print("Clicked")
 end)
+Section:NewButton("MY custom duels hub", "EZ win", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/custom%20duels%20hub%20(op)"))();
+print("Clicked")
+end)
 Section:NewButton("MY stfo hub", "EZ win", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/steal-time-from-others-script/refs/heads/main/stfo%20hub"))();
 print("Clicked")
@@ -565,28 +569,6 @@ local Tab = Window:NewTab("sword things")
 local Section = Tab:NewSection("op sword reach")
 Section:NewButton("sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
 loadstring(game:HttpGet('https://pastebin.com/raw/Jsghb8bt'))()
-print("Clicked")
-end)
-local Section = Tab:NewSection("my own sword reaches")
-local Section = Tab:NewSection("bypasses in some games")
-Section:NewButton("good sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20small"))();
-print("Clicked")
-end)
-Section:NewButton("BIG sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20middle"))();
-print("Clicked")
-end)
-Section:NewButton("VERY MASIVE sword reach", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/my%20sword%20reach%20big"))();
-print("Clicked")
-end)
-Section:NewButton("CUSTOM DUELS REACH FFA", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/custom%20fuels%20reach%20script"))();
-print("Clicked")
-end)
-Section:NewButton("CUSTOM DUELS REACH DUELS", "ghcshhgsdchhgsdchhgsdchhgdfhhghhgsdchhgddchhgghhddcghhsfdghhdfzsfdghgsdfhggfsdghgdsfghgedf", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/reach/refs/heads/main/custom%20duels%20script%20op"))();
 print("Clicked")
 end)
 local Section = Tab:NewSection("look at a near player")
