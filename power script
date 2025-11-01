@@ -1,6 +1,6 @@
 game.StarterGui:SetCore("SendNotification", {
     Title = "WELCOME ENJOY";
-    Text = "made by haxarebest1";
+    Text = "made by haxarebest2";
     Duration = 5
     })
 local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
