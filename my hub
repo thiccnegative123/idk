@@ -1,10 +1,10 @@
 game.StarterGui:SetCore("SendNotification", {
     Title = "WELCOME TO THE BEST HUB";
-    Text = "Made by Haxarebest1";
+    Text = "Made by Haxarebest2";
     Duration = 5
     })
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TwiRwal/TwiWare/main/uilib.lua"))()
-local Window = Library.CreateLib("from thicc negative                      MADE BY HAXAREBEST1", "Ocean")
+local Window = Library.CreateLib("from thicc negative                      MADE BY HAXAREBEST2", "Ocean")
 local Tab = Window:NewTab("HUBS AND FE SCRIPTS")
 local Section = Tab:NewSection("Hubs")
 Section:NewButton("Moon ui", "OP SCRIPT 69", function()
@@ -589,7 +589,7 @@ print("Clicked")
 end)
 local Tab = Window:NewTab("credits and more")
 local Section = Tab:NewSection("i did everything alone")
-local Section = Tab:NewSection("my discord user is haxarebest1")
+local Section = Tab:NewSection("my discord user is haxarebest2")
 local Section = Tab:NewSection("one of the best scripts in this hub are")
 local Section = Tab:NewSection("my own game scriotd")
 local Section = Tab:NewSection("vc anti ban")
