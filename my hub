@@ -427,6 +427,10 @@ Section:NewButton("Zombie attack", "EZ win", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/zombie%20attack"))();
 print("Clicked")
 end)
+Section:NewButton("Speed legends", "EZ win", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/speed-legends/refs/heads/main/script%205"))();
+print("Clicked")
+end)
 Section:NewButton("talent show", "TalEnT ", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/talent-show/refs/heads/main/my%20talent%20show%20hub"))();
 print("Clicked")
