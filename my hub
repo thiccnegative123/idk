@@ -516,6 +516,10 @@ Section:NewButton("FE CROSSHSIR", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/crosshair"))();
 print("Clicked")
 end)
+Section:NewButton("SMALL SERVER", "look how ugly they are", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/small%20serverhop"))();
+print("Clicked")
+end)
 Section:NewButton("FE SUICIDE", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/fnf/refs/heads/main/fe%20suicide%20roblox%20script"))();
 print("Clicked")
