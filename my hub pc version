@@ -465,7 +465,7 @@ print("Clicked")
 end)
 local Section = Tab:NewSection("My other hubs")
 Section:NewButton("MY fe tool pp hub", "ButtonInfo", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/my%20fe%20pp%20tool%20hub"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/my%20fe%20pp%20script%20pc%20version"))();
 print("Clicked")
 end)
 Section:NewButton("MY genesis fe hub (need require hats)", "ButtonInfo", function()
@@ -563,4 +563,5 @@ local Section = Tab:NewSection("my discord user is haxarebest2")
 local Section = Tab:NewSection("one of the best scripts in this hub are")
 local Section = Tab:NewSection("my own game scriotd")
 local Section = Tab:NewSection("vc anti ban")
+
 
