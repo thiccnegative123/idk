@@ -365,7 +365,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/H4R7NHacks/Obfuscated
 print("Clicked")
 end)
 Section:NewButton("prision life", "the is that for an name", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/zenss555a/script/refs/heads/main/Prison-Life.lua", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/PlutomasterAccount/Funny-Hub-V2/main/Prison%20Life"))()
 print("Clicked")
 end)
 Section:NewButton("pop it trading", "EZ WIN", function()
@@ -563,3 +563,4 @@ local Section = Tab:NewSection("my discord user is haxarebest2")
 local Section = Tab:NewSection("one of the best scripts in this hub are")
 local Section = Tab:NewSection("my own game scriotd")
 local Section = Tab:NewSection("vc anti ban")
+
