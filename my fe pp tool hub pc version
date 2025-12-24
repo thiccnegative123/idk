@@ -1,0 +1,272 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "WELCOME TO THE PP HUB";
+    Text = "Made by Haxarebest2";
+    Duration = 5
+    })
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TwiRwal/TwiWare/main/uilib.lua"))()
+local Window = Library.CreateLib("from thicc negative                      MADE BY HAXAREBEST2", "Synapse")
+local Tab = Window:NewTab("PP SCRIPT")
+local Section = Tab:NewSection("TOOLS")
+local Section = Tab:NewSection("DONT HOLD THE TOOL")
+local Section = Tab:NewSection("HOLD THE TOLL AFTER YOU EXECUTE")
+Section:NewButton("fe sword pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sword") or game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ClassicSword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Classic Sword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ChristmasSword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Foil") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Linked Sword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Black Sword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Thunder Sword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Classic") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sharpened") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Medical") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Linked") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Default") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ClassicSwordV2")
+if sword then
+    sword.Grip = CFrame.new(2, 1.25, 0, 0.0995037332, 0.995037258, 0, 0.995037258, -0.0995035842, 0, 0, 0, -1)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe Hammer pp prision life", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Hammer")
+if sword then
+    sword.Grip = CFrame.new(1.60000002, 1.39999998, 1.69999433, 0.0139333103, 0.995037258, 0.0985232815, 0.139333099, -0.0995036513, 0.985233605, 0.990147591, -1.12930119e-08, -0.140028074)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe shotgun pp prision life", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Remington 870")
+if sword then
+    sword.Grip = CFrame.new(0.800000012, 2.0999999, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe default glove slap battles pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Default") or 
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Extended")
+if sword then
+    sword.Grip = CFrame.new(-1.5, 0.800000012, 1.5, 0.00144193158, -0.999998868, -1.49754662e-08, 0.0144193172, 2.07914309e-05, -0.999896049, 0.999895096, 0.00144178176, 0.0144193312)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe Extended glove slap battles pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Extended")
+if sword then
+    sword.Grip = CFrame.new(-1.5, -7, 1.5, 0.00144193158, -0.999998868, -1.49754662e-08, 0.0144193172, 2.07914309e-05, -0.999896049, 0.999895096, 0.00144178176, 0.0144193312)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("4nn1s place fe Cyclotron pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Cyclotron ") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Cyclotron")
+if sword then
+    sword.Grip = CFrame.new(1.50000012, 0.500004053, 1.50000024, 1, 0, 0, 0, -4.23206387e-07, -0.999999106, 0, 0.999998987, -2.55239286e-07)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe Sing pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Low FPS sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("High FPS sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("DonateSign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ProtestSign")
+if sword then
+    sword.Grip = CFrame.new(1.5, 0.379857153, -1.54937255, 1, 0, 0, 0, 2.46889414e-07, 1, 0, -1, 2.46889414e-07)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("flex your weather fe Sing pp", "nice", function() 
+local sword = 
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign")
+if sword then
+    sword.Grip = CFrame.new(1.5, 1.50057149, -1.54937255, 1, 0, 0, 0, 2.46889414e-07, 1, 0, -1, 2.46889414e-07)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe public bathroom sim sign pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Low fps sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("high fps sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("DonateSign") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ProtestSign")
+if sword then
+    sword.Grip = CFrame.new(1.41204441, -1.5, -0.200000003, 1, 0, 0, 0, -0.999999344, 1.38972965e-07, 0, -2.46889243e-07, -0.999999464)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("Dupoint County Jail pp Cheese", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Cheese")
+if sword then
+    sword.Grip = CFrame.new(-1.33497286, 1.48417997, 0.9020105, -0.984812617, 0, -0.173621148, 0, 1, 0, 0.173621148, 0, -0.984812617)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("Dupoint County Jail pp Baton", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Baton")
+if sword then
+    sword.Grip = CFrame.new(1.0000025, 0.00208498212, -0.455497652, 0.534502745, -0.379281908, 0.755281985, 0.844634652, 0.271421611, -0.461434871, -0.0299859643, 0.884575665, 0.465430379)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe cjdc Flashlight pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Flashlight")
+if sword then
+    sword.Grip = CFrame.new(-0.500000119, 1.50000012, -1.5, 0.0875644982, 0, 0.996158838, 0, 1, -0, -0.996158898, 0, 0.0875644684)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe cjdc Hairbrush pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Hairbrush")
+if sword then
+    sword.Grip = CFrame.new(1.5, -1.5, -0.500030518, 0, 0.999999344, -1.38972965e-07, -1, 0, 0, 0, 2.46889243e-07, 0.999999464)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe blue noodle bloxton hotel pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Blue Noodle") 
+if sword then
+    sword.Grip = CFrame.new(0.180000007, -0.80000025, 1.16584706, -0.480205476, 0.691013336, -0.540280223, -0.307151526, -0.709416687, -0.634338558, -0.821620643, -0.138664991, 0.55291158)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe washiez regular ticket pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Regular Ticket") 
+if sword then
+    sword.Grip = CFrame.new(1.39999998, 2.00001001, -0.801000059, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe therapy yellow key pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Key") 
+if sword then
+    sword.Grip = CFrame.new(-0.408239931, 2.20000029, -1.29999995, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+local Section = Tab:NewSection("more tools")
+Section:NewButton("fe rate my avatar pizza pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Pizza").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Pizza")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(1.5, 1.5, -0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Pizza not found!!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe rate my avatar Bloxy Cola pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("BloxyCola").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("BloxyCola")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(-1.5, -0.5, -1.50001001, 0, -0.999999344, 1.38972965e-07, 0, 2.46889243e-07, 0.999999464, -1, 0, 0)
+else
+    warn("Bloxy Cola not found!!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe Booth game bloxy Cola pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Bloxy Cola").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Bloxy Cola")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(-1.5, -0.5, -1.50001001, 0, -0.999999344, 1.38972965e-07, 0, 2.46889243e-07, 0.999999464, -1, 0, 0)
+else
+    warn("Bloxy Cola not found!!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe valley prision Gauzes pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Gauzes") 
+if sword then
+    sword.Grip = CFrame.new(1.5, 1.30000055, -0.50001204, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("fe valley prision MilkTea pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Milk Tea").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Milk Tea")
+
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(1.5, -0.504455984, -1.5, 1, 0, 0, 0, 2.46889243e-07, 0.999999464, 0, -0.999999344, 1.38972965e-07)
+else
+    warn("Milk Tea not found or not a Tool!")
+end
+print("Clicked")
+end)
+Section:NewButton("The spades diner regular soda pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Regular Soda").Enabled = false
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Regular Soda")
+if sword then
+    sword.Grip = CFrame.new(1.50999022, 1.00999975, -0.601000667, 0.28366217, 0.90109396, -0.32797116, 0.166515514, -0.383110791, -0.908569634, -0.944355845, 0.203114495, -0.258720219)
+else
+    warn("Soda not found in Backpack!")
+end
+print("Clicked")
+end)
+Section:NewButton("papers pls beans pp", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("Beans").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("Beans")
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(1.50000012, 0.600000024, 1.5, 1, 0, 0, 0, -4.53206965e-08, -0.999999821, 0, 0.999999762, -3.71550435e-08)
+else
+    warn("beans not found!!")
+end
+print("Clicked")
+end)
+local Section = Tab:NewSection("the end off the pp scripts")
+local Tab = Window:NewTab("open close")
+local Section = Tab:NewSection("keyboard")
+Section:NewButton("keyboard", "keyboard", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
+print("Clicked")
+end)
+local Section = Tab:NewSection("Open/close")
+Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
+Library:ToggleUI()
+end)
+local Tab = Window:NewTab("Credits")
+local Section = Tab:NewSection("ONLY 23 OP PP SCRIPTS")
+local Section = Tab:NewSection("I COULDNT FIND A GOOD GAME")
+local Section = Tab:NewSection("WITH TOOLS!!!")
