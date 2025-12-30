@@ -469,7 +469,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/
 print("Clicked")
 end)
 Section:NewButton("MY genesis fe hub (need require hats)", "ButtonInfo", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/my%20fe%20pp%20tool%20hub"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/genesis%20fe%20hub"))();
 print("Clicked")
 end)
 Section:NewButton("MY Blockman go admin panel (all games)", "ButtonInfo", function()
