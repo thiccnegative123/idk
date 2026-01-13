@@ -1,10 +1,10 @@
 game.StarterGui:SetCore("SendNotification", {
     Title = "WELCOME TO THE PP HUB";
-    Text = "Made by Haxarebest2";
+    Text = "Made by Haxarebest1";
     Duration = 5
     })
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TwiRwal/TwiWare/main/uilib.lua"))()
-local Window = Library.CreateLib("from thicc negative                      MADE BY HAXAREBEST2", "Synapse")
+local Window = Library.CreateLib("from thicc negative                      MADE BY HAXAREBEST1", "Synapse")
 local Tab = Window:NewTab("PP SCRIPT")
 local Section = Tab:NewSection("TOOLS")
 local Section = Tab:NewSection("DONT HOLD THE TOOL")
@@ -176,7 +176,7 @@ else
 end
 print("Clicked")
 end)
-local Section = Tab:NewSection("more penises")
+local Section = Tab:NewSection("more pp scripts")
 Section:NewButton("fe rate my avatar pizza pp", "nice", function() 
 game.Players.LocalPlayer.Backpack:FindFirstChild("Pizza").Enabled = false
 local player = game.Players.LocalPlayer
@@ -255,6 +255,27 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("fe natural disaster hammer pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("BlueHammer") 
+if sword then
+    sword.Grip = CFrame.new(1.10000002, 0.700000226, 2.4000001, 0.977061272, -0.193832129, -0.0882064477, 0.0894780904, -0.00220205123, 0.995986342, 0.193248391, 0.981032193, -0.0151922032)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
+local Section = Tab:NewSection("18+ games")
+Section:NewButton("poke heaven", "nice", function() 
+game.Players.LocalPlayer.Backpack:FindFirstChild("MountainTop").Enabled = false
+local player = game.Players.LocalPlayer
+local sword = player.Backpack:FindFirstChild("MountainTop")
+if sword and sword:IsA("Tool") then
+    sword.Grip = CFrame.new(-1.69999993, 0.500000179, 1.29999995, 0, -0.999999821, -2.98023224e-08, 0, 2.98023224e-08, -0.999999821, 1, 0, 0)
+else
+    warn("beans not found!!")
+end
+print("Clicked")
+end)
 local Section = Tab:NewSection("the end off the pp scripts")
 local Tab = Window:NewTab("open close")
 local Section = Tab:NewSection("keyboard")
@@ -267,6 +288,6 @@ Section:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.F, function()
 Library:ToggleUI()
 end)
 local Tab = Window:NewTab("Credits")
-local Section = Tab:NewSection("ONLY 23 OP PP SCRIPTS")
+local Section = Tab:NewSection("ONLY 25 OP PP SCRIPTS")
 local Section = Tab:NewSection("I COULDNT FIND A GOOD GAME")
 local Section = Tab:NewSection("WITH TOOLS!!!")
