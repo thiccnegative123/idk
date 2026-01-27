@@ -467,6 +467,10 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/bxpa
 print("Clicked")
 end)
 Section:NewButton("my own chat bypasser V3", "LOL ", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/bxpasser/refs/heads/main/chat%20bypasser%20v3"))()
+print("Clicked")
+end)
+Section:NewButton("my own chat bypasser V3", "LOL ", function()
 loadstring(game:HttpGet("https://github.com/thiccnegative123/bxpasser/blob/main/chat%20bypasser%20v3"))();
 print("Clicked")
 end)
