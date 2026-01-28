@@ -4,6 +4,9 @@ local frame = Instance.new("Frame", gui)
 local button = Instance.new("TextButton", frame)
 local button1 = Instance.new("TextButton", frame)
 local button2 = Instance.new("TextButton", frame)
+local button3 = Instance.new("TextButton", frame)
+local button4 = Instance.new("TextButton", frame)
+local button5 = Instance.new("TextButton", frame)
 local text = Instance.new("TextLabel", frame)
 local text1 = Instance.new("TextLabel", frame)
 
@@ -29,6 +32,24 @@ button2.Position = UDim2.new(0,400,0,78)
 button2.Draggable = false
 button2.Active = true
 button2.Text = "iland esp"
+
+button3.Size = UDim2.new(0.3,0,0.1,0)
+button3.Position = UDim2.new(0,193,0,244)
+button3.Draggable = false
+button3.Active = true
+button3.Text = "small server"
+
+button4.Size = UDim2.new(0.3,0,0.1,0)
+button4.Position = UDim2.new(0,7,0,244)
+button4.Draggable = false
+button4.Active = true
+button4.Text = "gacha tp sea 1"
+
+button5.Size = UDim2.new(0.3,0,0.1,0)
+button5.Position = UDim2.new(0,399,0,244)
+button5.Draggable = false
+button5.Active = true
+button5.Text = "gacha tp sea 3"
 
 text.Size = UDim2.new(0.3,0,0.3,0)
 text.Position = UDim2.new(0,198,0,-3)
@@ -385,5 +406,38 @@ mapFolder.ChildAdded:Connect(function(obj)
 		createESP(obj)
 	end
 end)
+
+end)
+
+button3.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/small%20serverhop"))();
+end)
+
+button4.MouseButton1Click:Connect(function()
+local broken = 0
+
+
+while wait() do
+if broken == 100 then
+break
+end
+local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+hrp.CFrame = CFrame.new(-1439.97131, 59.3709946, 5.11972523, 0.114024326, -0.222735539, -0.96818763, 0, 0.974543631, -0.224197775, 0.993477941, 0.025564, 0.111121692)
+broken = broken + 1
+end
+end)
+
+button5.MouseButton1Click:Connect(function()
+local broken = 0
+
+
+while wait() do
+if broken == 100 then
+break
+end
+local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+hrp.CFrame = CFrame.new(-12488.9004, 333.293457, -7446.95459, 0.985692143, 0.0582340099, 0.158177018, 0, 0.938423455, -0.345487326, -0.168556139, 0.340544134, 0.924996495)
+broken = broken + 1
+end
 
 end)
