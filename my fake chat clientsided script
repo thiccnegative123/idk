@@ -1,7 +1,7 @@
 --// Notification
 game:GetService("StarterGui"):SetCore("SendNotification", {
 	Title = "Fake Chat Script",
-	Text = "Made by Amity#0001 | Fixed by haxarebest1",
+	Text = "Made by Amity#0001 | Fixed by haxarebest2",
 	Duration = 5
 })
 
