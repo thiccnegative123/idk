@@ -1,0 +1,249 @@
+--// Notification
+game:GetService("StarterGui"):SetCore("SendNotification", {
+	Title = "Fake Chat Script",
+	Text = "Made by Amity#0001 | Fixed by haxarebest1",
+	Duration = 5
+})
+
+--// Cleanup
+if getgenv().FakeChatStorage then
+	if getgenv().FakeChatStorage.UI then
+		getgenv().FakeChatStorage.UI:Destroy()
+	end
+	if getgenv().FakeChatStorage.Connections then
+		for _,v in pairs(getgenv().FakeChatStorage.Connections) do
+			v:Disconnect()
+		end
+	end
+end
+
+getgenv().FakeChatStorage = {Connections = {}, UI = nil}
+
+--// Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local ChatService = game:GetService("Chat")
+local TextChatService = game:GetService("TextChatService")
+
+local lp = Players.LocalPlayer
+local connections = getgenv().FakeChatStorage.Connections
+local plrlist = {}
+
+-- Track players
+connections["Joined"] = Players.PlayerAdded:Connect(function(plr)
+	plrlist[plr] = plr
+end)
+
+connections["Left"] = Players.PlayerRemoving:Connect(function(plr)
+	plrlist[plr] = nil
+end)
+
+for _,v in pairs(Players:GetPlayers()) do
+	plrlist[v] = v
+end
+
+----------------------------------------------------------------
+-- Modern Roblox Name Colors (Working Version)
+----------------------------------------------------------------
+local NAME_COLORS = {
+	Color3.fromRGB(253,41,67),    -- Red checked
+	Color3.fromRGB(1,162,255),    -- tan checked
+	Color3.fromRGB(2,184,87),     -- Green checked
+	Color3.fromRGB(180,100,255),    -- Bright Purple checked
+	Color3.fromRGB(220,128,0),    -- Orange checked
+	Color3.fromRGB(180,100,255),    -- also purple checked
+	Color3.fromRGB(255,200,204),  -- bright Pink checked
+	Color3.fromRGB(1,162,255)    -- Blue checked
+}
+
+local function GetNameValue(name)
+	local value = 0
+	for i = 1, #name do
+		local charValue = string.byte(name:sub(i,i))
+		local reverseIndex = #name - i + 1
+
+		if #name % 2 == 1 then
+			reverseIndex = reverseIndex - 1
+		end
+
+		if reverseIndex % 4 >= 2 then
+			charValue = -charValue
+		end
+
+		value = value + charValue
+	end
+	return value
+end
+
+local function getNameColor(plr)
+	local value = GetNameValue(plr.Name)
+	local index = (math.abs(value) % #NAME_COLORS) + 1
+	return NAME_COLORS[index]
+end
+
+local function colorToRGBString(color)
+	return string.format("rgb(%d,%d,%d)",
+		math.floor(color.R*255),
+		math.floor(color.G*255),
+		math.floor(color.B*255)
+	)
+end
+
+----------------------------------------------------------------
+-- Send Fake Message (colon colored)
+----------------------------------------------------------------
+local function sendFakeMessage(plr, msg, isWhisper)
+	local displayName = plr.DisplayName or plr.Name
+	local color = getNameColor(plr)
+	local rgb = colorToRGBString(color)
+
+	local formatted = string.format(
+		'%s<font color="%s">%s: </font>%s',
+		isWhisper and "[Whisper] " or "",
+		rgb,
+		displayName,
+		msg
+	)
+
+	-- Bubble chat
+	if plr.Character and plr.Character:FindFirstChild("Head") then
+		ChatService:Chat(
+			plr.Character.Head,
+			msg,
+			isWhisper and Enum.ChatColor.Green or Enum.ChatColor.Blue
+		)
+	end
+
+	-- TextChatService
+	pcall(function()
+		local channel = TextChatService:FindFirstChild("TextChannels")
+			and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+
+		if channel then
+			channel:DisplaySystemMessage(formatted)
+		else
+			StarterGui:SetCore("ChatMakeSystemMessage", {
+				Text = displayName .. ": " .. msg,
+				Color = color,
+				Font = Enum.Font.GothamMedium,
+				FontSize = Enum.FontSize.Size16
+			})
+		end
+	end)
+end
+
+----------------------------------------------------------------
+-- Player Selector
+----------------------------------------------------------------
+local function getPlayer(str)
+	str = str:lower()
+	local t = {}
+
+	if str == "me" then
+		return {lp}
+	elseif str == "all" then
+		for _,p in pairs(plrlist) do table.insert(t,p) end
+		return t
+	elseif str == "others" then
+		for _,p in pairs(plrlist) do
+			if p ~= lp then table.insert(t,p) end
+		end
+		return t
+	end
+
+	for _,p in pairs(plrlist) do
+		if p.Name:lower():sub(1,#str) == str
+		or p.DisplayName:lower():sub(1,#str) == str then
+			table.insert(t,p)
+		end
+	end
+
+	return t
+end
+
+----------------------------------------------------------------
+-- Commands
+----------------------------------------------------------------
+local cmdlist = {}
+
+cmdlist["fakechat"] = function(args,msg)
+	for _,p in pairs(getPlayer(args[2])) do
+		sendFakeMessage(p,msg,false)
+	end
+end
+
+cmdlist["fc"] = cmdlist["fakechat"]
+
+cmdlist["fakewhisper"] = function(args,msg)
+	sendFakeMessage(lp,msg,true)
+end
+
+cmdlist["fw"] = cmdlist["fakewhisper"]
+
+----------------------------------------------------------------
+-- GUI
+----------------------------------------------------------------
+local playerGui = lp:WaitForChild("PlayerGui")
+local screenGui = Instance.new("ScreenGui", playerGui)
+screenGui.ResetOnSpawn = false
+screenGui.Name = "CommandBarGui"
+getgenv().FakeChatStorage.UI = screenGui
+
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0,400,0,40)
+frame.Position = UDim2.new(0.5,-200,1,-60)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Visible = false
+frame.BorderSizePixel = 0
+
+local textBox = Instance.new("TextBox", frame)
+textBox.Size = UDim2.new(1,-10,1,-10)
+textBox.Position = UDim2.new(0,5,0,5)
+textBox.BackgroundColor3 = Color3.fromRGB(60,60,60)
+textBox.TextColor3 = Color3.new(1,1,1)
+textBox.ClearTextOnFocus = false
+textBox.TextScaled = true
+textBox.PlaceholderText = "Enter command..."
+textBox.Text = ""
+
+----------------------------------------------------------------
+-- Toggle with V
+----------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input,gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.V then
+		frame.Visible = not frame.Visible
+		if frame.Visible then
+			textBox:CaptureFocus()
+		else
+			textBox:ReleaseFocus()
+		end
+	end
+end)
+
+----------------------------------------------------------------
+-- Handle Commands
+----------------------------------------------------------------
+textBox.FocusLost:Connect(function(enterPressed)
+	if not enterPressed then return end
+
+	local text = textBox.Text
+	local args = string.split(text," ")
+	local cmd = args[1] and args[1]:lower()
+
+	if cmd and args[2] and cmdlist[cmd] then
+		local msg = ""
+		if #args > 2 then
+			for i = 3,#args do
+				msg = msg .. args[i] .. " "
+			end
+			msg = msg:sub(1,-2)
+		end
+		cmdlist[cmd](args,msg)
+	end
+
+	textBox.Text = ""
+	frame.Visible = false
+	textBox:ReleaseFocus()
+end)
