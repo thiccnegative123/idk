@@ -1,0 +1,132 @@
+--c to open textbox
+--x to activate fake fling
+
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Enabled = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 120)
+frame.Position = UDim2.new(0.5, -150, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Parent = screenGui
+
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0, 260, 0, 40)
+textBox.Position = UDim2.new(0.5, -130, 0.3, 0)
+textBox.PlaceholderText = "Enter username / display / partial"
+textBox.Parent = frame
+
+-- Find player by partial match or display name
+local function findPlayer(input)
+	input = string.lower(input)
+	for _, plr in pairs(Players:GetPlayers()) do
+		local username = string.lower(plr.Name)
+		local display = string.lower(plr.DisplayName)
+		if string.find(username, input, 1, true) or string.find(display, input, 1, true) then
+			return plr
+		end
+	end
+	return nil
+end
+
+-- X key teleports the target player 7 times
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+	
+	if input.KeyCode == Enum.KeyCode.X then
+		local found = findPlayer(textBox.Text)
+		
+		if found and found ~= player then
+			if found.Character and player.Character then
+				local myHRP = player.Character:FindFirstChild("HumanoidRootPart")
+				local targetHRP = found.Character:FindFirstChild("HumanoidRootPart")
+				
+				if myHRP and targetHRP then
+					for i = 1, 40 do
+						targetHRP.CFrame = myHRP.CFrame
+						task.wait(0.03)
+					end
+
+					-- Services
+
+
+local player = Players.LocalPlayer
+
+-- Fling settings
+local rightPower = 4000
+local downPower = -5000
+local layTime = 0.01 -- how long you stay collapsed before fling
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+	
+	if input.KeyCode == Enum.KeyCode.X then
+		if player.Character then
+			local character = player.Character
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			local hrp = character:FindFirstChild("HumanoidRootPart")
+			
+			if humanoid and hrp then
+				-- Force ragdoll/lay down
+				humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+				
+				task.wait(layTime)
+				
+				-- Fling right + downward
+				local rightVector = hrp.CFrame.RightVector * rightPower
+				hrp.AssemblyLinearVelocity = rightVector + Vector3.new(0, downPower, 0)
+				
+				print("Lay down → FLING!")
+			end
+		end
+	end
+end)
+					-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+
+					print("Teleported " .. found.Name .. " 7 times")
+				end
+			end
+		else
+			warn("Player not found")
+		end
+	end
+end)
+
+-- Enter closes GUI only
+textBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then
+		screenGui.Enabled = false
+	end
+end)
+
+-- C toggles GUI + auto-focus
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+	
+	if input.KeyCode == Enum.KeyCode.C and not textBox:IsFocused() then
+		screenGui.Enabled = not screenGui.Enabled
+		if screenGui.Enabled then
+			task.wait()
+			textBox:CaptureFocus()
+		else
+			textBox:ReleaseFocus()
+		end
+	end
+end)
