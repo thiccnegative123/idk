@@ -1,0 +1,372 @@
+-- CONFIG
+local moveAmount = 0.05
+local rotateAmount = math.rad(2)
+
+-- SERVICES
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+
+-- STORAGE
+local accessories = {}
+local currentAccessoryName = nil
+
+local buttonMoving = {
+	Left=false, Right=false, Forward=false, Backward=false,
+	Up=false, Down=false,
+	TurnLeft=false, TurnRight=false,
+	TurnUp=false, TurnDown=false
+}
+
+local keyMoving = {
+	Left=false, Right=false, Forward=false, Backward=false,
+	Up=false, Down=false,
+	TurnLeft=false, TurnRight=false,
+	TurnUp=false, TurnDown=false
+}
+
+local guiVisible = true
+local manageGuiVisible = true
+local guiData = {}
+
+-- FUNCTIONS
+local function getParentForAccessory(accessory)
+	local ap = accessory:FindFirstChild("AttachmentPoint")
+	if not ap then return char:FindFirstChild("Head") end
+	local y = ap.Position.Y
+
+	if y > 0.1 then
+		return char:FindFirstChild("Head")
+	elseif y < -0.1 then
+		return char:FindFirstChild("LowerTorso") or char:FindFirstChild("HumanoidRootPart")
+	else
+		return char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
+	end
+end
+
+local function attachAccessory(accessory)
+	local parent = getParentForAccessory(accessory)
+	local handle = accessory:FindFirstChild("Handle")
+	if not parent or not handle then return end
+
+	accessory.Parent = char
+	handle.CFrame = parent.CFrame
+
+	local weld = Instance.new("Weld")
+	weld.Part0 = parent
+	weld.Part1 = handle
+	weld.C0 = parent.CFrame:ToObjectSpace(handle.CFrame)
+	weld.Parent = parent
+
+	accessories[accessory.Name] = {
+		Accessory = accessory,
+		Weld = weld,
+		Visible = true
+	}
+
+	currentAccessoryName = accessory.Name
+end
+
+local function spawnSelectedAccessory(userId, accessoryName)
+	local desc = Players:GetHumanoidDescriptionFromUserId(userId)
+	local rig = Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+
+	for _, item in pairs(rig:GetChildren()) do
+		if item:IsA("Accessory") and item.Name == accessoryName then
+			attachAccessory(item:Clone())
+			break
+		end
+	end
+
+	rig:Destroy()
+	updateManageGUI()
+end
+
+local function getAccessoryList(userId)
+	local desc = Players:GetHumanoidDescriptionFromUserId(userId)
+	local rig = Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+
+	local list = {}
+	for _, item in pairs(rig:GetChildren()) do
+		if item:IsA("Accessory") then
+			table.insert(list, item.Name)
+		end
+	end
+
+	rig:Destroy()
+	return list
+end
+
+local function moveCurrent(x,y,z)
+	if currentAccessoryName and accessories[currentAccessoryName] then
+		local weld = accessories[currentAccessoryName].Weld
+		weld.C0 = weld.C0 * CFrame.new(x,y,z)
+	end
+end
+
+local function rotateCurrent(xRot,yRot)
+	if currentAccessoryName and accessories[currentAccessoryName] then
+		local weld = accessories[currentAccessoryName].Weld
+		weld.C0 = weld.C0 * CFrame.Angles(xRot, yRot, 0)
+	end
+end
+
+local function toggleAccessoryVisibility(name)
+	local data = accessories[name]
+	if data and data.Accessory and data.Accessory:FindFirstChild("Handle") then
+		data.Visible = not data.Visible
+		data.Accessory.Handle.Transparency = data.Visible and 0 or 1
+	end
+end
+
+local function deleteAccessory(name)
+	local data = accessories[name]
+	if data and data.Accessory then
+		data.Accessory:Destroy()
+	end
+
+	accessories[name] = nil
+	if currentAccessoryName == name then
+		currentAccessoryName = nil
+	end
+
+	updateManageGUI()
+end
+
+-- GUI
+local function createGUI()
+	local gui = Instance.new("ScreenGui")
+	gui.Parent = player:WaitForChild("PlayerGui")
+	gui.ResetOnSpawn = false
+
+	local box = Instance.new("TextBox", gui)
+	box.Size = UDim2.new(0,200,0,40)
+	box.Position = UDim2.new(0,10,1,-280)
+	box.PlaceholderText = "Enter Username"
+
+	local apply = Instance.new("TextButton", gui)
+	apply.Size = UDim2.new(0,200,0,40)
+	apply.Position = UDim2.new(0,10,1,-230)
+	apply.Text = "Load Accessories"
+
+	-- ✅ selectGui is now a ScrollingFrame and draggable
+	local selectGui = Instance.new("ScrollingFrame", gui)
+	selectGui.Size = UDim2.new(0,220,0,150)
+	selectGui.Position = UDim2.new(0,220,1,-280)
+	selectGui.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	selectGui.Visible = guiVisible
+	selectGui.ScrollBarThickness = 6
+	selectGui.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	selectGui.Active = true
+	selectGui.Draggable = true
+
+	local manageGui = Instance.new("Frame", gui)
+	manageGui.Size = UDim2.new(0,250,0,150)
+	manageGui.Position = UDim2.new(0,10,1,-450)
+	manageGui.BackgroundColor3 = Color3.fromRGB(70,70,70)
+	manageGui.Visible = manageGuiVisible
+
+	guiData.selectGui = selectGui
+	guiData.manageGui = manageGui
+	guiData.box = box
+	guiData.gui = gui
+
+	apply.MouseButton1Click:Connect(function()
+		if box.Text == "" then return end
+
+		local success, userId = pcall(function()
+			return Players:GetUserIdFromNameAsync(box.Text)
+		end)
+
+		if not success then return end
+
+		local accList = getAccessoryList(userId)
+
+		selectGui:ClearAllChildren()
+
+		for i,name in ipairs(accList) do
+			local btn = Instance.new("TextButton", selectGui)
+			btn.Size = UDim2.new(0,200,0,30)
+			btn.Position = UDim2.new(0,10,0,(i-1)*35+10)
+			btn.Text = name
+
+			btn.MouseButton1Click:Connect(function()
+				spawnSelectedAccessory(userId,name)
+			end)
+		end
+	end)
+
+	local function makeMoveButton(text,x,y,dir)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0,50,0,40)
+		btn.Position = UDim2.new(0,x,1,y)
+		btn.Text = text
+		btn.Parent = gui
+
+		btn.MouseButton1Down:Connect(function()
+			buttonMoving[dir] = true
+		end)
+
+		btn.MouseButton1Up:Connect(function()
+			buttonMoving[dir] = false
+		end)
+
+		btn.MouseLeave:Connect(function()
+			buttonMoving[dir] = false
+		end)
+	end
+
+	-- movement buttons
+	makeMoveButton("←",10,-160,"Left")
+	makeMoveButton("→",120,-160,"Right")
+	makeMoveButton("↑",65,-200,"Forward")
+	makeMoveButton("↓",65,-120,"Backward")
+	makeMoveButton("Up",180,-160,"Up")
+	makeMoveButton("Down",240,-160,"Down")
+
+	-- rotation Y
+	makeMoveButton("rotate left",300,-200,"TurnLeft")
+	makeMoveButton("rotate right",360,-200,"TurnRight")
+
+	-- rotation X
+	makeMoveButton("rotate up",300,-120,"TurnUp")
+	makeMoveButton("rotate down",360,-120,"TurnDown")
+end
+
+function updateManageGUI()
+	local manageGui = guiData.manageGui
+	if not manageGui then return end
+
+	manageGui:ClearAllChildren()
+
+	local i = 0
+	for name,_ in pairs(accessories) do
+		local y = i*35+10
+
+		local btn = Instance.new("TextButton", manageGui)
+		btn.Size = UDim2.new(0,150,0,30)
+		btn.Position = UDim2.new(0,10,0,y)
+		btn.Text = name
+
+		btn.MouseButton1Click:Connect(function()
+			currentAccessoryName = name
+		end)
+
+		local toggle = Instance.new("TextButton", manageGui)
+		toggle.Size = UDim2.new(0,40,0,30)
+		toggle.Position = UDim2.new(0,170,0,y)
+		toggle.Text = "👁"
+
+		toggle.MouseButton1Click:Connect(function()
+			toggleAccessoryVisibility(name)
+		end)
+
+		local del = Instance.new("TextButton", manageGui)
+		del.Size = UDim2.new(0,30,0,30)
+		del.Position = UDim2.new(0,215,0,y)
+		del.Text = "❌"
+
+		del.MouseButton1Click:Connect(function()
+			deleteAccessory(name)
+		end)
+
+		i += 1
+	end
+end
+
+createGUI()
+
+-- LOOP
+spawn(function()
+	while true do
+		task.wait(0.03)
+
+		if currentAccessoryName and accessories[currentAccessoryName] then
+			local x,y,z = 0,0,0
+			local rotX, rotY = 0,0
+
+			if keyMoving.Left or buttonMoving.Left then x -= moveAmount end
+			if keyMoving.Right or buttonMoving.Right then x += moveAmount end
+			if keyMoving.Forward or buttonMoving.Forward then z -= moveAmount end
+			if keyMoving.Backward or buttonMoving.Backward then z += moveAmount end
+			if keyMoving.Up or buttonMoving.Up then y += moveAmount end
+			if keyMoving.Down or buttonMoving.Down then y -= moveAmount end
+
+			if keyMoving.TurnLeft or buttonMoving.TurnLeft then rotY -= rotateAmount end
+			if keyMoving.TurnRight or buttonMoving.TurnRight then rotY += rotateAmount end
+			if keyMoving.TurnUp or buttonMoving.TurnUp then rotX -= rotateAmount end
+			if keyMoving.TurnDown or buttonMoving.TurnDown then rotX += rotateAmount end
+
+			if x~=0 or y~=0 or z~=0 then
+				moveCurrent(x,y,z)
+			end
+
+			if rotX~=0 or rotY~=0 then
+				rotateCurrent(rotX,rotY)
+			end
+		end
+	end
+end)
+
+-- INPUT
+UIS.InputBegan:Connect(function(input,gpe)
+	if gpe then return end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+	if input.KeyCode == Enum.KeyCode.Left then keyMoving.Left=true
+	elseif input.KeyCode == Enum.KeyCode.Right then keyMoving.Right=true
+	elseif input.KeyCode == Enum.KeyCode.Up then keyMoving.Forward=true
+	elseif input.KeyCode == Enum.KeyCode.Down then keyMoving.Backward=true
+	elseif input.KeyCode == Enum.KeyCode.E then keyMoving.Up=true
+	elseif input.KeyCode == Enum.KeyCode.Q then keyMoving.Down=true
+	elseif input.KeyCode == Enum.KeyCode.Z then keyMoving.TurnLeft=true
+	elseif input.KeyCode == Enum.KeyCode.C then keyMoving.TurnRight=true
+	elseif input.KeyCode == Enum.KeyCode.R then keyMoving.TurnUp=true
+	elseif input.KeyCode == Enum.KeyCode.F then keyMoving.TurnDown=true
+
+	elseif input.KeyCode == Enum.KeyCode.F1 then
+		guiData.selectGui.Visible = not guiData.selectGui.Visible
+	elseif input.KeyCode == Enum.KeyCode.F2 then
+		guiData.gui.Visible = not guiData.gui.Visible
+	elseif input.KeyCode == Enum.KeyCode.F3 then
+		manageGuiVisible = not manageGuiVisible
+		guiData.manageGui.Visible = manageGuiVisible
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+	if input.KeyCode == Enum.KeyCode.Left then keyMoving.Left=false
+	elseif input.KeyCode == Enum.KeyCode.Right then keyMoving.Right=false
+	elseif input.KeyCode == Enum.KeyCode.Up then keyMoving.Forward=false
+	elseif input.KeyCode == Enum.KeyCode.Down then keyMoving.Backward=false
+	elseif input.KeyCode == Enum.KeyCode.E then keyMoving.Up=false
+	elseif input.KeyCode == Enum.KeyCode.Q then keyMoving.Down=false
+	elseif input.KeyCode == Enum.KeyCode.Z then keyMoving.TurnLeft=false
+	elseif input.KeyCode == Enum.KeyCode.C then keyMoving.TurnRight=false
+	elseif input.KeyCode == Enum.KeyCode.R then keyMoving.TurnUp=false
+	elseif input.KeyCode == Enum.KeyCode.F then keyMoving.TurnDown=false
+	end
+end)
+
+-- RESPAWN
+player.CharacterAdded:Connect(function(newChar)
+	char = newChar
+	char:WaitForChild("Humanoid")
+
+	for name,data in pairs(accessories) do
+		if data.Accessory and data.Accessory:FindFirstChild("Handle") then
+			local parent = getParentForAccessory(data.Accessory)
+
+			local weld = Instance.new("Weld")
+			weld.Part0 = parent
+			weld.Part1 = data.Accessory.Handle
+			weld.C0 = data.Weld.C0
+			weld.Parent = parent
+
+			data.Weld = weld
+		end
+	end
+end)
