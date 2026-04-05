@@ -361,7 +361,7 @@ loadstring(game:HttpGet("https://rawscripts.net/raw/Sambung-Kata-By-DexterHUB-12
 print("Clicked")
 end)
 Section:NewButton("pop it trading op", "breaking bad", function()
- loadstring(game:HttpGet("https://raw.githubusercontent.com/proxdarsgame-design/vortexhub-script/refs/heads/main/vortexhub%20script", true))()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Pop-It-Trading-Buyer-81997"))()
 print("Clicked")
 end)
 Section:NewButton("pop it trading", "the is that for an name", function()
