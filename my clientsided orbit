@@ -1,0 +1,179 @@
+--b to open player name thing
+--y to execute the orbit
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.Enabled = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 320, 0, 120)
+frame.Position = UDim2.new(0.5, -160, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1
+stroke.Color = Color3.fromRGB(120, 120, 255)
+stroke.Transparency = 0.55
+stroke.Parent = frame
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 45)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 15))
+})
+gradient.Rotation = 90
+gradient.Parent = frame
+
+
+-- ================= TEXTBOX =================
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(0, 280, 0, 40)
+box.Position = UDim2.new(0.5, -140, 0.2, 0)
+box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+box.TextColor3 = Color3.fromRGB(255, 255, 255)
+box.PlaceholderText = "Type player to orbit YOU"
+box.ClearTextOnFocus = false
+box.Text = ""
+box.Font = Enum.Font.Gotham
+box.TextSize = 14
+box.BorderSizePixel = 0
+box.Parent = frame
+
+Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0, 280, 0, 40)
+label.Position = UDim2.new(0.5, -140, 0.6, 0)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(220, 220, 255)
+label.Font = Enum.Font.GothamSemibold
+label.TextSize = 14
+label.TextWrapped = true
+label.Text = "Selected: none"
+label.Parent = frame
+
+
+-- ================= FIND PLAYER =================
+local function findPlayer(input)
+	input = string.lower(input)
+	if input == "" then return nil end
+
+	for _, p in ipairs(Players:GetPlayers()) do
+		if string.find(string.lower(p.Name), input, 1, true)
+			or string.find(string.lower(p.DisplayName), input, 1, true) then
+			return p
+		end
+	end
+end
+
+
+-- ================= STATE =================
+local target = nil
+local orbiting = false
+local savedCFrame = nil
+
+
+-- live update selection
+box:GetPropertyChangedSignal("Text"):Connect(function()
+	target = findPlayer(box.Text)
+
+	if target then
+		label.Text = "Selected: " .. target.Name
+	else
+		label.Text = "Selected: none"
+	end
+end)
+
+
+-- ================= ENTER FIX (IMPORTANT) =================
+-- THIS is the correct way (works 100%)
+box.FocusLost:Connect(function(enterPressed)
+	if enterPressed then
+		gui.Enabled = false
+	end
+end)
+
+
+-- clear when focused
+box.Focused:Connect(function()
+	box.Text = ""
+end)
+
+
+-- ================= INPUT =================
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+	-- toggle GUI
+	if input.KeyCode == Enum.KeyCode.B then
+		gui.Enabled = not gui.Enabled
+
+		if gui.Enabled then
+			task.wait()
+			box:CaptureFocus()
+		else
+			box:ReleaseFocus()
+		end
+	end
+
+	-- toggle orbit
+	if input.KeyCode == Enum.KeyCode.Z then
+		if target and target.Character then
+			local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+
+			if hrp then
+				if not orbiting then
+					savedCFrame = hrp.CFrame
+					orbiting = true
+				else
+					orbiting = false
+					if savedCFrame then
+						hrp.CFrame = savedCFrame
+					end
+				end
+			end
+		end
+	end
+end)
+
+
+-- ================= ORBIT SYSTEM =================
+RunService.RenderStepped:Connect(function()
+	if not orbiting then return end
+
+	local char = player.Character
+	local targetChar = target and target.Character
+
+	if not char or not targetChar then return end
+
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local thrp = targetChar:FindFirstChild("HumanoidRootPart")
+
+	if not hrp or not thrp then return end
+
+	local t = os.clock()
+
+	local radius = 10
+	local speed = 30
+
+	local offset = Vector3.new(
+		math.cos(t * speed) * radius,
+		2,
+		math.sin(t * speed) * radius
+	)
+
+	thrp.CFrame = hrp.CFrame * CFrame.new(offset)
+end)
