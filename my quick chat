@@ -1,0 +1,241 @@
+local UIS = game:GetService("UserInputService")
+local TextChatService = game:GetService("TextChatService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- SETTINGS
+local TIMEOUT = 2.5
+local quickChatEnabled = true
+
+-- QUICK CHAT DATA
+local categories = {
+	{
+		name = "POST GAME",
+		messages = {
+			"gg",
+			"Well Played.",
+			"That was fun!",
+			"Rematch"
+		}
+	},
+
+	{
+		name = "COMPLIMENTS",
+		messages = {
+			"Nice one!",
+			"Incoming!",
+			"Thanks!",
+			"Yes!"
+		}
+	},
+
+	{
+		name = "REACTIONS",
+		messages = {
+			"OMG!",
+			"Close one!",
+			"Wow",
+			"Faking."
+		}
+	},
+
+	{
+		name = "APOLOGIES",
+		messages = {
+			"$#@%!",
+			"No problem.!",
+			"Oops!",
+			"Sorry!"
+		}
+	}
+}
+
+local currentCategory = nil
+local timeoutId = 0
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "RocketLeagueQuickChat"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 170)
+
+-- MIDDLE LEFT
+frame.Position = UDim2.new(0, 30, 0.5, -85)
+
+frame.BackgroundColor3 = Color3.fromRGB(8,8,8)
+frame.BackgroundTransparency = 0.28
+frame.BorderSizePixel = 0
+
+-- HIDDEN BY DEFAULT
+frame.Visible = false
+
+frame.Parent = gui
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255,140,0)
+stroke.Transparency = 0.5
+stroke.Thickness = 1
+stroke.Parent = frame
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,3)
+corner.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,20)
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0,8,0,2)
+
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Font = Enum.Font.ArialBold
+title.TextSize = 13
+title.TextColor3 = Color3.fromRGB(255,170,0)
+
+title.Parent = frame
+
+local labels = {}
+
+for i = 1,4 do
+
+	local label = Instance.new("TextLabel")
+
+	label.Size = UDim2.new(1,-12,0,32)
+	label.Position = UDim2.new(0,6,0,24 + ((i-1)*35))
+
+	label.BackgroundColor3 = Color3.fromRGB(18,18,18)
+	label.BackgroundTransparency = 0.15
+	label.BorderSizePixel = 0
+
+	label.TextColor3 = Color3.fromRGB(240,240,240)
+
+	label.Font = Enum.Font.Arial
+	label.TextSize = 14
+
+	label.TextXAlignment = Enum.TextXAlignment.Left
+
+	label.Parent = frame
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0,8)
+	padding.Parent = label
+
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0,2)
+	c.Parent = label
+
+	labels[i] = label
+end
+
+local function hideMenu()
+	currentCategory = nil
+	frame.Visible = false
+end
+
+local function startTimeout()
+
+	timeoutId += 1
+	local currentId = timeoutId
+
+	task.delay(TIMEOUT, function()
+
+		if currentId ~= timeoutId then
+			return
+		end
+
+		hideMenu()
+	end)
+end
+
+local function showMain()
+
+	currentCategory = nil
+	frame.Visible = true
+
+	title.Text = "QUICK CHAT"
+
+	labels[1].Text = "1   POST GAME"
+	labels[2].Text = "2   COMPLIMENTS"
+	labels[3].Text = "3   REACTIONS"
+	labels[4].Text = "4   APOLOGIES"
+
+	startTimeout()
+end
+
+local function showCategory(index)
+
+	currentCategory = index
+	frame.Visible = true
+
+	local category = categories[index]
+
+	title.Text = category.name
+
+	for i = 1,4 do
+		labels[i].Text = i .. "   " .. category.messages[i]
+	end
+
+	startTimeout()
+end
+
+local keyMap = {
+	[Enum.KeyCode.One] = 1,
+	[Enum.KeyCode.Two] = 2,
+	[Enum.KeyCode.Three] = 3,
+	[Enum.KeyCode.Four] = 4
+}
+
+UIS.InputBegan:Connect(function(input, processed)
+
+	if processed then
+		return
+	end
+
+	-- TOGGLE QUICK CHAT
+	if input.KeyCode == Enum.KeyCode.T then
+
+		quickChatEnabled = not quickChatEnabled
+
+		if not quickChatEnabled then
+			hideMenu()
+		end
+
+		return
+	end
+
+	-- QUICK CHAT DISABLED
+	if not quickChatEnabled then
+		return
+	end
+
+	local number = keyMap[input.KeyCode]
+
+	if not number then
+		return
+	end
+
+	-- OPEN MENU
+	if not frame.Visible then
+		showMain()
+		showCategory(number)
+		return
+	end
+
+	-- SEND MESSAGE
+	local message = categories[currentCategory].messages[number]
+
+	if message then
+
+		local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+
+		if channel then
+			channel:SendAsync(message)
+		end
+	end
+
+	hideMenu()
+end)
