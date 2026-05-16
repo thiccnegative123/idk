@@ -1,6 +1,6 @@
 game.StarterGui:SetCore("SendNotification", {
     Title = "WELCOME TO THE PP HUB";
-    Text = "Made by Haxarebest1";
+    Text = "Made by Haxarebest2";
     Duration = 5
     })
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TwiRwal/TwiWare/main/uilib.lua"))()
