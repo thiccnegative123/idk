@@ -1,5 +1,5 @@
 game.StarterGui:SetCore("SendNotification", {
-    Title = "open with t then press 1-4";
+    Title = "then press 1-4 close t";
     Text = "Made by Haxarebest2";
     Duration = 5
     })
@@ -52,8 +52,8 @@ local categories = {
 		name = "APOLOGIES",
 		messages = {
 			"$#@%!",
-			"No problem.!",
-			"Oops!",
+			"No problem.",
+			"Whoops!",
 			"Sorry!"
 		}
 	}
@@ -69,41 +69,46 @@ gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 260, 0, 170)
+frame.Size = UDim2.new(0, 220, 0, 150)
+frame.Position = UDim2.new(0, 20, 0.5, -75)
 
--- MIDDLE LEFT
-frame.Position = UDim2.new(0, 30, 0.5, -85)
-
-frame.BackgroundColor3 = Color3.fromRGB(8,8,8)
-frame.BackgroundTransparency = 0.28
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.35
 frame.BorderSizePixel = 0
-
--- HIDDEN BY DEFAULT
 frame.Visible = false
-
 frame.Parent = gui
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(255,140,0)
-stroke.Transparency = 0.5
-stroke.Thickness = 1
-stroke.Parent = frame
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0,3)
-corner.Parent = frame
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(25,25,25)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0))
+}
+gradient.Rotation = 90
+gradient.Parent = frame
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,20)
 title.BackgroundTransparency = 1
-title.Position = UDim2.new(0,8,0,2)
+title.Position = UDim2.new(0,10,0,6)
+title.Size = UDim2.new(1,-10,0,16)
 
-title.TextXAlignment = Enum.TextXAlignment.Left
 title.Font = Enum.Font.ArialBold
-title.TextSize = 13
-title.TextColor3 = Color3.fromRGB(255,170,0)
+title.TextSize = 11
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = Color3.fromRGB(120,170,255)
 
 title.Parent = frame
+
+local categoryLabel = Instance.new("TextLabel")
+categoryLabel.BackgroundTransparency = 1
+categoryLabel.Position = UDim2.new(0,10,0,18)
+categoryLabel.Size = UDim2.new(1,-10,0,22)
+
+categoryLabel.Font = Enum.Font.ArialBold
+categoryLabel.TextSize = 20
+categoryLabel.TextXAlignment = Enum.TextXAlignment.Left
+categoryLabel.TextColor3 = Color3.new(1,1,1)
+
+categoryLabel.Parent = frame
 
 local labels = {}
 
@@ -111,29 +116,16 @@ for i = 1,4 do
 
 	local label = Instance.new("TextLabel")
 
-	label.Size = UDim2.new(1,-12,0,32)
-	label.Position = UDim2.new(0,6,0,24 + ((i-1)*35))
+	label.BackgroundTransparency = 1
+	label.Position = UDim2.new(0,12,0,42 + ((i-1)*24))
+	label.Size = UDim2.new(1,-12,0,22)
 
-	label.BackgroundColor3 = Color3.fromRGB(18,18,18)
-	label.BackgroundTransparency = 0.15
-	label.BorderSizePixel = 0
-
-	label.TextColor3 = Color3.fromRGB(240,240,240)
-
-	label.Font = Enum.Font.Arial
-	label.TextSize = 14
-
+	label.Font = Enum.Font.ArialBold
+	label.TextSize = 15
 	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextColor3 = Color3.new(1,1,1)
 
 	label.Parent = frame
-
-	local padding = Instance.new("UIPadding")
-	padding.PaddingLeft = UDim.new(0,8)
-	padding.Parent = label
-
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0,2)
-	c.Parent = label
 
 	labels[i] = label
 end
@@ -164,11 +156,12 @@ local function showMain()
 	frame.Visible = true
 
 	title.Text = "QUICK CHAT"
+	categoryLabel.Text = ""
 
-	labels[1].Text = "1   POST GAME"
-	labels[2].Text = "2   COMPLIMENTS"
-	labels[3].Text = "3   REACTIONS"
-	labels[4].Text = "4   APOLOGIES"
+	labels[1].Text = "1  POST GAME"
+	labels[2].Text = "2  COMPLIMENTS"
+	labels[3].Text = "3  REACTIONS"
+	labels[4].Text = "4  APOLOGIES"
 
 	startTimeout()
 end
@@ -180,10 +173,11 @@ local function showCategory(index)
 
 	local category = categories[index]
 
-	title.Text = category.name
+	title.Text = "QUICK CHAT"
+	categoryLabel.Text = category.name
 
 	for i = 1,4 do
-		labels[i].Text = i .. "   " .. category.messages[i]
+		labels[i].Text = i .. "  " .. category.messages[i]
 	end
 
 	startTimeout()
@@ -214,7 +208,7 @@ UIS.InputBegan:Connect(function(input, processed)
 		return
 	end
 
-	-- QUICK CHAT DISABLED
+	-- DISABLED
 	if not quickChatEnabled then
 		return
 	end
@@ -225,9 +219,8 @@ UIS.InputBegan:Connect(function(input, processed)
 		return
 	end
 
-	-- OPEN MENU
+	-- OPEN CATEGORY
 	if not frame.Visible then
-		showMain()
 		showCategory(number)
 		return
 	end
