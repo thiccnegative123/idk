@@ -1,6 +1,12 @@
 --b to open player name thing
 --y to execute the orbit
 
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Clientsided orbit";
+    Text = "Made by Haxarebest2";
+    Duration = 5
+    })
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
