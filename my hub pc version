@@ -468,8 +468,13 @@ Section:NewButton("xyras bypass(keysytem) updates after 100 years", "LOL ", func
 loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/761069f077f8a235e216590ed825845d0fcb185f454d6c0e027075e39d4af876/download"))()
 print("Clicked")
 end)
-Section:NewButton("questionable bypasser (press verify key)", "LOL ", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/bxpasser/refs/heads/main/random%20bypasser"))()
+Section:NewButton("questionable bypasser ey: levelup", "LOL ", function()
+game.StarterGui:SetCore("SendNotification", {
+    Title = "KEY IS levelup";
+    Text = "KEY IS levelup";
+    Duration = 7
+    })
+loadstring(game:HttpGet("https://raw.githubusercontent.com/fearlessd3v/TEAM-FEARLESS/refs/heads/main/fearless-chat-bypass"))()
 print("Clicked")
 end)
 local Section = Tab:NewSection("chat bypasser NOT SKIDDED")
