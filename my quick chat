@@ -1,3 +1,10 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "open with t then press 1-4";
+    Text = "Made by Haxarebest2";
+    Duration = 5
+    })
+
+
 local UIS = game:GetService("UserInputService")
 local TextChatService = game:GetService("TextChatService")
 local Players = game:GetService("Players")
