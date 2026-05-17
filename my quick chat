@@ -53,7 +53,7 @@ local categories = {
 		messages = {
 			"$#@%!",
 			"No problem.",
-			"Whoops!",
+			"Okay.",
 			"Sorry!"
 		}
 	}
