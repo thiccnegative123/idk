@@ -41,7 +41,7 @@ local categories = {
 	{
 		name = "REACTIONS",
 		messages = {
-			"OMG!",
+			"You have time!",
 			"Close one!",
 			"Wow!",
 			"Go for it!"
