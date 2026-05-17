@@ -22,7 +22,7 @@ local categories = {
 		name = "POST GAME",
 		messages = {
 			"gg",
-			"Well Played.",
+			"Well Played!",
 			"That was fun!",
 			"Rematch!"
 		}
