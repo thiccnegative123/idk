@@ -24,7 +24,7 @@ local categories = {
 			"gg",
 			"Well Played.",
 			"That was fun!",
-			"Rematch"
+			"Rematch!"
 		}
 	},
 
@@ -43,7 +43,7 @@ local categories = {
 		messages = {
 			"OMG!",
 			"Close one!",
-			"Wow",
+			"Wow!",
 			"Go for it!"
 		}
 	},
