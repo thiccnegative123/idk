@@ -87,7 +87,7 @@ button2.MouseButton1Click:Connect(function()
 local shotgun = game.Players.LocalPlayer.Backpack["Remington 870"]
 
 shotgun:SetAttribute("Range", 10000000000)
-shotgun:SetAttribute("FireRate", 0.01)
+shotgun:SetAttribute("FireRate", 0.03)
 shotgun:SetAttribute("SpreadRadius", 0.0000000001)
 end)
 
