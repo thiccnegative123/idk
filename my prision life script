@@ -1,0 +1,108 @@
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+gui.ResetOnSpawn = false
+local frame = Instance.new("Frame", gui)
+local button = Instance.new("TextButton", frame)
+local button1 = Instance.new("TextButton", frame)
+local button2 = Instance.new("TextButton", frame)
+local button3 = Instance.new("TextButton", frame)
+local button4 = Instance.new("TextButton", frame)
+local button5 = Instance.new("TextButton", frame)
+local text = Instance.new("TextLabel", frame)
+local text1 = Instance.new("TextLabel", frame)
+
+frame.Size = UDim2.new(0.3,0,0.3,0)
+frame.Position = UDim2.new(0,675,0,61)
+frame.Draggable = true
+frame.Active = true
+
+button.Size = UDim2.new(0.3,0,0.3,0)
+button.Position = UDim2.new(0,3,0,78)
+button.Draggable = false
+button.Active = true
+button.Text = "OP MP5"
+
+button1.Size = UDim2.new(0.3,0,0.3,0)
+button1.Position = UDim2.new(0,204,0,78)
+button1.Draggable = false
+button1.Active = true
+button1.Text = "OP M9"
+
+button2.Size = UDim2.new(0.3,0,0.3,0)
+button2.Position = UDim2.new(0,400,0,78)
+button2.Draggable = false
+button2.Active = true
+button2.Text = "OP SHOTGUN"
+
+button3.Size = UDim2.new(0.3,0,0.1,0)
+button3.Position = UDim2.new(0,193,0,244)
+button3.Draggable = false
+button3.Active = true
+button3.Text = "OP AK47"
+
+button4.Size = UDim2.new(0.3,0,0.1,0)
+button4.Position = UDim2.new(0,7,0,244)
+button4.Draggable = false
+button4.Active = true
+button4.Text = "Aimbot mod menu"
+
+button5.Size = UDim2.new(0.3,0,0.1,0)
+button5.Position = UDim2.new(0,399,0,244)
+button5.Draggable = false
+button5.Active = true
+button5.Text = "HITBOX EXPANDER"
+
+text.Size = UDim2.new(0.3,0,0.3,0)
+text.Position = UDim2.new(0,198,0,-3)
+text.Draggable = false
+text.Active = false
+text.BackgroundTransparency = 1
+text.Text = "PRISION LIFE FUCKER 5000"
+text.TextSize = 30
+
+text1.Size = UDim2.new(0.3,0,0.3,0)
+text1.Position = UDim2.new(0,197,0,177)
+text1.Draggable = false
+text1.Active = false
+text1.BackgroundTransparency = 1
+text1.Text = "MADE BY HAXAREBEST2"
+text1.TextSize = 30
+
+
+button.MouseButton1Click:Connect(function()
+local MP5 = game.Players.LocalPlayer.Backpack["MP5"]
+
+MP5:SetAttribute("Range", 10000000000)
+MP5:SetAttribute("FireRate", 0.03)
+end)
+
+button1.MouseButton1Click:Connect(function()
+local M9 = game.Players.LocalPlayer.Backpack["M9"]
+
+M9:SetAttribute("Range", 10000000000)
+M9:SetAttribute("FireRate", 0.05)
+M9:SetAttribute("AutoFire", true)
+end)
+
+button2.MouseButton1Click:Connect(function()
+local shotgun = game.Players.LocalPlayer.Backpack["Remington 870"]
+
+shotgun:SetAttribute("Range", 10000000000)
+shotgun:SetAttribute("FireRate", 0)
+shotgun:SetAttribute("SpreadRadius", 0.0000000001)
+end)
+
+
+button3.MouseButton1Click:Connect(function()
+local Ak = game.Players.LocalPlayer.Backpack["Ak-47"]
+
+Ak:SetAttribute("Range", 10000000000)
+Ak:SetAttribute("FireRate", 0.03)
+end)
+
+button4.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-VIOLENT-MOD-MENU-UPDATED-VERSION-111374"))()
+end)
+
+button5.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://pastebin.com/raw/LWuVzYJY"))()
+end)
