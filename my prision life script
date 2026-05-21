@@ -239,11 +239,17 @@ local function sendChatMessage(message)
 end
 
 sendChatMessage("🔴⚪⚪🔴🔴🔴🔴")
+wait()
 sendChatMessage("🔴⚪⚪🔴⚪⚪⚪")
+wait()
 sendChatMessage("🔴⚪⚪🔴⚪⚪⚪")
+wait()
 sendChatMessage("🔴🔴🔴🔴🔴🔴🔴")
+wait()
 sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
+wait()
 sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
+wait()
 sendChatMessage("🔴🔴🔴🔴⚪⚪🔴")
 end)
 
