@@ -42,7 +42,7 @@ end)
 Section:NewButton("fe shotgun pp prision life", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Remington 870")
 if sword then
-    sword.Grip = CFrame.new(0.800000012, 2.0999999, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+    sword.Grip = CFrame.new(0.900000036, 2.0999999, 0.800000012, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 else
     warn("Sword not found in Backpack!")
 end
