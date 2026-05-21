@@ -176,10 +176,10 @@ end)
 
 
 button3.MouseButton1Click:Connect(function()
-local Ak = game.Players.LocalPlayer.Backpack["Ak-47"]
+local AK = game.Players.LocalPlayer.Backpack["AK-47"]
 
-Ak:SetAttribute("Range", 10000000000)
-Ak:SetAttribute("FireRate", 0.03)
+AK:SetAttribute("Range", 10000000000)
+AK:SetAttribute("FireRate", 0.03)
 end)
 
 button4.MouseButton1Click:Connect(function()
