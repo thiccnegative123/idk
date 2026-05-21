@@ -533,6 +533,28 @@ Section:NewButton("MY ANIMATION GUI", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/fnf/refs/heads/main/my%20animation%20pc%20version"))();
 print("Clicked")
 end)
+Section:NewButton("MY NAZI SYMBOL IN CHAT", "look how ugly they are", function()
+local TextChatService = game:GetService("TextChatService")
+
+
+local function sendChatMessage(message)
+    local chatChannel = TextChatService.TextChannels.RBXGeneral
+    if chatChannel then
+        chatChannel:SendAsync(message)
+    else
+        warn("Chat channel RBXGeneral not found.")
+    end
+end
+
+sendChatMessage("🔴⚪⚪🔴🔴🔴🔴")
+sendChatMessage("🔴⚪⚪🔴⚪⚪⚪")
+sendChatMessage("🔴⚪⚪🔴⚪⚪⚪")
+sendChatMessage("🔴🔴🔴🔴🔴🔴🔴")
+sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
+sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
+sendChatMessage("🔴🔴🔴🔴⚪⚪🔴")
+print("Clicked")
+end)
 Section:NewButton("SMALL SERVER", "look how ugly they are", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/small%20serverhop"))();
 print("Clicked")
