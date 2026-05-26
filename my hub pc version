@@ -424,6 +424,10 @@ Section:NewButton("Speed legends", "EZ win", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/speed-legends/refs/heads/main/script%205"))();
 print("Clicked")
 end)
+Section:NewButton("+1 health per click", "EZ win", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/%2B1%20health%20per%20click"))()
+print("Clicked")
+end)
 Section:NewButton("talent show", "TalEnT ", function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/talent-show/refs/heads/main/talent%20show%20hub%20pc%20version"))();
 print("Clicked")
