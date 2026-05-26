@@ -1,0 +1,81 @@
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+gui.ResetOnSpawn = false
+local frame = Instance.new("Frame", gui)
+local button1 = Instance.new("TextButton", frame)
+local button2 = Instance.new("TextButton", frame)
+local button3 = Instance.new("TextButton", frame)
+local button4 = Instance.new("TextButton", frame)
+local text = Instance.new("TextLabel", frame)
+local text1 = Instance.new("TextLabel", frame)
+
+
+frame.Size = UDim2.new(0.3, 0, 0.3, 0)
+frame.Position = UDim2.new(0, 615, 0, 314)
+frame.Active = true
+frame.Draggable = true
+
+button1.Size = UDim2.new(0.25,0,0.3,0)
+button1.Position = UDim2.new(0,0,0,142)
+button1.Draggable = false
+button1.Active = true
+button1.Text = "Tp World 2"
+
+button2.Size = UDim2.new(0.25,0,0.3,0)
+button2.Position = UDim2.new(0,189,0,142)
+button2.Draggable = false
+button2.Active = true
+button2.Text = "Tp World 3"
+
+button3.Size = UDim2.new(0.25,0,0.3,0)
+button3.Position = UDim2.new(0,380,0,142)
+button3.Draggable = false
+button3.Active = true
+button3.Text = "Autofarm world 3"
+
+button4.Size = UDim2.new(1,0,0.15,0)
+button4.Position = UDim2.new(0,-2,0,244)
+button4.Draggable = false
+button4.Active = true
+button4.Text = "get a skidded script"
+
+text.Size = UDim2.new(1,0,0.15,0)
+text.Position = UDim2.new(0,0,0,76)
+text.Draggable = false
+text.Active = true
+text.Text = "MADE BY HAXAREBEST2"
+text.TextSize = 34
+text.BackgroundTransparency = 1
+
+text1.Size = UDim2.new(1,0,0.15,0)
+text1.Position = UDim2.new(0,-8,0,14)
+text1.Draggable = false
+text1.Active = true
+text1.Text = "+1 HEALTH PER CLICK FUCKER 5000"
+text1.TextSize = 22
+text1.BackgroundTransparency = 1
+
+
+
+button1.MouseButton1Click:Connect(function()
+game.ReplicatedStorage:FindFirstChild("World 2"):FindFirstChild("Teleport To World 2"):FireServer()
+end)
+
+button2.MouseButton1Click:Connect(function()
+game.ReplicatedStorage:FindFirstChild("World 2"):FindFirstChild("Teleport To World 3"):FireServer()
+end)
+
+button3.MouseButton1Click:Connect(function()
+local lol = 1
+
+while lol == 1 do
+local endcframe = CFrame.new(939.39, 222.17, 699.41)
+local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+
+hrp.CFrame = endcframe
+wait()
+end
+end)
+
+button4.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/gumanba/Scripts/main/1HealthPerClick"))()
+end)
