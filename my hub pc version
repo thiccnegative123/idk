@@ -669,7 +669,7 @@ loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Cframe-Loca
 print("Clicked")
 end)
 Section:NewButton("ReMoTe SpY", "dpy on some es", function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/JaoExploiter/StellySpy/refs/heads/main/StellySpyV2%20RemoteSpy.txt"))()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Akifs-Remote-Spy-54400"))()
 print("Clicked")
 end)
 local Tab = Window:NewTab("credits and more")
