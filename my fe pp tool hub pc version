@@ -167,6 +167,15 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("fe washiez staff keycard pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Staff Keycard") 
+if sword then
+    sword.Grip = CFrame.new(0.5, 1.5, -1.85000002, -0.196116135, 2.64517706e-08, -0.980580688, 0.980580688, 5.29035393e-09, -0.19611612, 0, -1, -2.69756182e-08)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
 Section:NewButton("fe washiez training center brownie pp", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Fudge Brownie") 
 if sword then
