@@ -1,80 +1,87 @@
 
 
-local gui = script.Parent
-local frame = gui:WaitForChild("MainFrame")
-local chatLog = frame:WaitForChild("ChatLog")
-local inputBox = frame:WaitForChild("InputBox")
-local sendButton = frame:WaitForChild("SendButton")
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
 
--- =========================
--- CUSTOM LETTER CONVERSION
--- =========================
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FontChat"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 320, 0, 60)
+frame.Position = UDim2.new(0.5, -160, 0.85, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1, -85, 1, -10)
+inputBox.Position = UDim2.new(0, 5, 0, 5)
+inputBox.PlaceholderText = "Type message..."
+inputBox.Text = ""
+inputBox.ClearTextOnFocus = false
+inputBox.Parent = frame
+
+local sendButton = Instance.new("TextButton")
+sendButton.Size = UDim2.new(0, 70, 1, -10)
+sendButton.Position = UDim2.new(1, -75, 0, 5)
+sendButton.Text = "Send"
+sendButton.Parent = frame
+
+-- Font conversion
 local convert = {
-	A = "Δ", B = "β", C = "Ć", D = "Đ", E = "€", F = "₣", G = "Ǥ",
-	H = "Ħ", I = "ł", J = "J", K = "Ҝ", L = "Ł", M = "M", N = "Ň",
-	O = "Ø", P = "Ƥ", Q = "Q̃", R = "Ř", S = "Ş", T = "Ŧ",
-	U = "Ũʼ", V = "ᐯ", W = "Ŵ", X = "X̂", Y = "¥", Z = "Z",
+	A="Δ", B="β", C="Ć", D="Đ", E="€", F="₣", G="Ǥ",
+	H="Ħ", I="ł", J="J", K="Ҝ", L="Ł", M="M", N="Ň",
+	O="Ø", P="Ƥ", Q="Q̃", R="Ř", S="Ş", T="Ŧ",
+	U="Ũʼ", V="ᐯ", W="Ŵ", X="X̂", Y="¥", Z="Z",
 
-	a = "Δ", B = "β", c = "Ć", d = "Đ", e = "€", f = "₣", g = "Ǥ",
-	h = "Ħ", i = "ł", j = "J", k = "Ҝ", l = "Ł", m = "M", n = "Ň",
-	o = "Ø", p = "Ƥ", q = "Q̃", r = "Ř", s = "Ş", t = "Ŧ",
-	u = "Ũʼ", v = "V", w = "Ŵ", x = "X̂", y = "¥", z = "Z"
+	a="Δ", b="β", c="Ć", d="Đ", e="€", f="₣", g="Ǥ",
+	h="Ħ", i="ł", j="J", k="Ҝ", l="Ł", m="M", n="Ň",
+	o="Ø", p="Ƥ", q="Q̃", r="Ř", s="Ş", t="Ŧ",
+	u="Ũʼ", v="ᐯ", w="Ŵ", x="X̂", y="¥", z="Z"
 }
 
--- =========================
--- CHAT UI SETUP
--- =========================
-local layout = Instance.new("UIListLayout")
-layout.Parent = chatLog
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local function addMessage(text)
-	local msg = Instance.new("TextLabel")
-	msg.Size = UDim2.new(1, 0, 0, 25)
-	msg.BackgroundTransparency = 1
-	msg.TextXAlignment = Enum.TextXAlignment.Left
-	msg.TextColor3 = Color3.fromRGB(255, 255, 255)
-	msg.Font = Enum.Font.SourceSans
-	msg.TextSize = 18
-	msg.Text = text
-	msg.Parent = chatLog
-
-	task.wait()
-	chatLog.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
-	chatLog.CanvasPosition = Vector2.new(0, layout.AbsoluteContentSize.Y)
-end
-
--- =========================
--- TEXT CONVERTER
--- =========================
 local function convertText(text)
-	local newText = ""
+	local result = ""
 
 	for i = 1, #text do
 		local char = text:sub(i, i)
-		newText = newText .. (convert[char] or char)
+		result ..= (convert[char] or char)
 	end
 
-	return newText
+	return result
 end
 
--- =========================
--- SEND MESSAGE
--- =========================
 local function sendMessage()
 	local text = inputBox.Text
 
-	if text ~= "" then
-		local converted = convertText(text)
-		addMessage("You: " .. converted)
-		inputBox.Text = ""
+	if text == "" then
+		return
 	end
+
+	local converted = convertText(text)
+
+	local success, err = pcall(function()
+		local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+		if channel then
+			channel:SendAsync(converted)
+		end
+	end)
+
+	if not success then
+		warn(err)
+	end
+
+	inputBox.Text = ""
 end
 
--- Button click
 sendButton.MouseButton1Click:Connect(sendMessage)
 
--- Enter key support
 inputBox.FocusLost:Connect(function(enterPressed)
 	if enterPressed then
 		sendMessage()
