@@ -1,0 +1,122 @@
+
+
+--some if the letters are normal
+A B C D E F G H I (j) K L M N O P (q)R S T U V W (x) Y  (z)
+
+A = Δ
+B = β
+C = Ć
+D = Đ
+E = €
+F = ₣
+G = Ǥ
+H = Ħ
+I =ł
+
+K = Ҝ
+L = Ł
+M = M
+N = 
+
+P = 
+R = Ř
+
+S = 
+
+O = 
+
+
+T = 
+U = Ũʼ
+
+
+
+
+
+W = Ŵ
+
+Y = ¥
+
+
+
+
+local gui = script.Parent
+local frame = gui:WaitForChild("MainFrame")
+local chatLog = frame:WaitForChild("ChatLog")
+local inputBox = frame:WaitForChild("InputBox")
+local sendButton = frame:WaitForChild("SendButton")
+
+-- =========================
+-- CUSTOM LETTER CONVERSION
+-- =========================
+local convert = {
+	A = "Δ", B = "β", C = "Ć", D = "Đ", E = "€", F = "₣", G = "Ǥ",
+	H = "Ħ", I = "ł", J = "J", K = "Ҝ", L = "Ł", M = "M", N = "Ň",
+	O = "Ø", P = "Ƥ", Q = "Q̃", R = "Ř", S = "Ş", T = "Ŧ",
+	U = "Ũʼ", V = "ᐯ", W = "Ŵ", X = "X̂", Y = "¥", Z = "Z",
+
+	a = "Δ", B = "β", c = "Ć", d = "Đ", e = "€", f = "₣", g = "Ǥ",
+	h = "Ħ", i = "ł", j = "J", k = "Ҝ", l = "Ł", m = "M", n = "Ň",
+	o = "Ø", p = "Ƥ", q = "Q̃", r = "Ř", s = "Ş", t = "Ŧ",
+	u = "Ũʼ", v = "V", w = "Ŵ", x = "X̂", y = "¥", z = "Z"
+}
+
+-- =========================
+-- CHAT UI SETUP
+-- =========================
+local layout = Instance.new("UIListLayout")
+layout.Parent = chatLog
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function addMessage(text)
+	local msg = Instance.new("TextLabel")
+	msg.Size = UDim2.new(1, 0, 0, 25)
+	msg.BackgroundTransparency = 1
+	msg.TextXAlignment = Enum.TextXAlignment.Left
+	msg.TextColor3 = Color3.fromRGB(255, 255, 255)
+	msg.Font = Enum.Font.SourceSans
+	msg.TextSize = 18
+	msg.Text = text
+	msg.Parent = chatLog
+
+	task.wait()
+	chatLog.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+	chatLog.CanvasPosition = Vector2.new(0, layout.AbsoluteContentSize.Y)
+end
+
+-- =========================
+-- TEXT CONVERTER
+-- =========================
+local function convertText(text)
+	local newText = ""
+
+	for i = 1, #text do
+		local char = text:sub(i, i)
+		newText = newText .. (convert[char] or char)
+	end
+
+	return newText
+end
+
+-- =========================
+-- SEND MESSAGE
+-- =========================
+local function sendMessage()
+	local text = inputBox.Text
+
+	if text ~= "" then
+		local converted = convertText(text)
+		addMessage("You: " .. converted)
+		inputBox.Text = ""
+	end
+end
+
+-- Button click
+sendButton.MouseButton1Click:Connect(sendMessage)
+
+-- Enter key support
+inputBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then
+		sendMessage()
+	end
+end)
