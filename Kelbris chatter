@@ -1,45 +1,5 @@
 
 
---some if the letters are normal
-A B C D E F G H I (j) K L M N O P (q)R S T U V W (x) Y  (z)
-
-A = Δ
-B = β
-C = Ć
-D = Đ
-E = €
-F = ₣
-G = Ǥ
-H = Ħ
-I =ł
-
-K = Ҝ
-L = Ł
-M = M
-N = 
-
-P = 
-R = Ř
-
-S = 
-
-O = 
-
-
-T = 
-U = Ũʼ
-
-
-
-
-
-W = Ŵ
-
-Y = ¥
-
-
-
-
 local gui = script.Parent
 local frame = gui:WaitForChild("MainFrame")
 local chatLog = frame:WaitForChild("ChatLog")
