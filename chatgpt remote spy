@@ -1,0 +1,203 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RemoteExplorer"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 500, 0, 400)
+frame.Position = UDim2.new(0.5, -250, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -90, 1, 0)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Remote Explorer"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+local enabled = true
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 70, 0, 25)
+toggleButton.Position = UDim2.new(1, -75, 0, 5)
+toggleButton.Text = "ON"
+toggleButton.Parent = titleBar
+
+local searchBox = Instance.new("TextBox")
+searchBox.Size = UDim2.new(1, -10, 0, 30)
+searchBox.Position = UDim2.new(0, 5, 0, 40)
+searchBox.PlaceholderText = "Search remotes..."
+searchBox.Parent = frame
+
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -10, 0, 210)
+scrollingFrame.Position = UDim2.new(0, 5, 0, 75)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.ScrollBarThickness = 18
+scrollingFrame.Parent = frame
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 2)
+layout.Parent = scrollingFrame
+
+local detailsFrame = Instance.new("Frame")
+detailsFrame.Size = UDim2.new(1, -10, 0, 100)
+detailsFrame.Position = UDim2.new(0, 5, 0, 290)
+detailsFrame.Parent = frame
+
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(1, 0, 0, 25)
+nameLabel.Text = "Select a remote"
+nameLabel.Parent = detailsFrame
+
+local pathBox = Instance.new("TextBox")
+pathBox.Size = UDim2.new(1, 0, 0, 30)
+pathBox.Position = UDim2.new(0, 0, 0, 30)
+pathBox.ClearTextOnFocus = false
+pathBox.TextEditable = true
+pathBox.Parent = detailsFrame
+
+local copyButton = Instance.new("TextButton")
+copyButton.Size = UDim2.new(0, 100, 0, 30)
+copyButton.Position = UDim2.new(0, 0, 0, 65)
+copyButton.Text = "Copy Path"
+copyButton.Parent = detailsFrame
+
+local selectedRemote
+
+-- Draggable Window
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function updateDrag(input)
+	local delta = input.Position - dragStart
+
+	frame.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input == dragInput then
+		updateDrag(input)
+	end
+end)
+
+-- Toggle Explorer
+toggleButton.MouseButton1Click:Connect(function()
+	enabled = not enabled
+
+	searchBox.Visible = enabled
+	scrollingFrame.Visible = enabled
+	detailsFrame.Visible = enabled
+
+	toggleButton.Text = enabled and "ON" or "OFF"
+end)
+
+local function getRemotes()
+	local remotes = {}
+
+	for _, obj in ipairs(game:GetDescendants()) do
+		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+			table.insert(remotes, obj)
+		end
+	end
+
+	table.sort(remotes, function(a, b)
+		return a:GetFullName() < b:GetFullName()
+	end)
+
+	return remotes
+end
+
+local function refreshList(filter)
+	for _, child in ipairs(scrollingFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+
+	local count = 0
+
+	for _, remote in ipairs(getRemotes()) do
+		local fullName = remote:GetFullName()
+
+		if filter == "" or string.find(
+			string.lower(fullName),
+			string.lower(filter),
+			1,
+			true
+		) then
+
+			local button = Instance.new("TextButton")
+			button.Size = UDim2.new(1, -5, 0, 25)
+			button.Text = remote.Name .. " (" .. remote.ClassName .. ")"
+			button.Parent = scrollingFrame
+            button.TextSize = 12
+
+			button.MouseButton1Click:Connect(function()
+				selectedRemote = remote
+				nameLabel.Text = remote.Name
+				pathBox.Text = remote:GetFullName()
+			end)
+
+			count += 1
+		end
+	end
+
+	scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, count * 28)
+end
+
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	refreshList(searchBox.Text)
+end)
+
+copyButton.MouseButton1Click:Connect(function()
+	if selectedRemote then
+		pathBox:CaptureFocus()
+		pathBox.SelectionStart = 1
+		pathBox.CursorPosition = #pathBox.Text + 1
+	end
+end)
+
+refreshList("")
