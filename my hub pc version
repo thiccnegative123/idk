@@ -461,17 +461,7 @@ local Section = Tab:NewSection("THE END OF THE GAMES SCRIPTS")
 local Tab = Window:NewTab("Chat things")
 local Section = Tab:NewSection("chat bot")
 Section:NewButton("op chat bot", "LOL ", function()
-loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-ChatBot-Script-works-in-all-games-113600"))()
-local thegui = game.CoreGui:FindFirstChild("CodeNinjaUI")
-
-if thegui then
-    wait(2)
-    for _, v in pairs(thegui:GetChildren()) do
-        if v:IsA("Frame") and v.Size == UDim2.new(0, 300, 0, 220) then
-            v:Destroy()
-        end
-    end
-end
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-AI-Chatbot-Script-KEYLESS-106332"))()
 print("Clicked")
 end)
 local Section = Tab:NewSection("chat drawer")
