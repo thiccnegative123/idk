@@ -22,7 +22,7 @@ titleBar.BorderSizePixel = 0
 titleBar.Parent = frame
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -90, 1, 0)
+title.Size = UDim2.new(1, -170, 1, 0)
 title.Position = UDim2.new(0, 5, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Remote Explorer"
@@ -37,6 +37,12 @@ toggleButton.Size = UDim2.new(0, 70, 0, 25)
 toggleButton.Position = UDim2.new(1, -75, 0, 5)
 toggleButton.Text = "ON"
 toggleButton.Parent = titleBar
+
+local refreshButton = Instance.new("TextButton")
+refreshButton.Size = UDim2.new(0, 70, 0, 25)
+refreshButton.Position = UDim2.new(1, -150, 0, 5)
+refreshButton.Text = "Refresh"
+refreshButton.Parent = titleBar
 
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -10, 0, 30)
@@ -123,22 +129,14 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Toggle Explorer
-toggleButton.MouseButton1Click:Connect(function()
-	enabled = not enabled
-
-	searchBox.Visible = enabled
-	scrollingFrame.Visible = enabled
-	detailsFrame.Visible = enabled
-
-	toggleButton.Text = enabled and "ON" or "OFF"
-end)
-
 local function getRemotes()
 	local remotes = {}
 
 	for _, obj in ipairs(game:GetDescendants()) do
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+		if obj:IsA("RemoteEvent")
+			or obj:IsA("RemoteFunction")
+			or obj:IsA("UnreliableRemoteEvent") then
+
 			table.insert(remotes, obj)
 		end
 	end
@@ -172,13 +170,24 @@ local function refreshList(filter)
 			local button = Instance.new("TextButton")
 			button.Size = UDim2.new(1, -5, 0, 25)
 			button.Text = remote.Name .. " (" .. remote.ClassName .. ")"
+			button.TextSize = 12
 			button.Parent = scrollingFrame
-            button.TextSize = 12
 
 			button.MouseButton1Click:Connect(function()
 				selectedRemote = remote
 				nameLabel.Text = remote.Name
-				pathBox.Text = remote:GetFullName()
+
+				local path = "game." .. remote:GetFullName()
+
+				if remote:IsA("RemoteFunction") then
+					path ..= ":InvokeServer()"
+				elseif remote:IsA("RemoteEvent") then
+					path ..= ":FireServer()"
+				elseif remote:IsA("UnreliableRemoteEvent") then
+					path ..= ":FireServer()"
+				end
+
+				pathBox.Text = path
 			end)
 
 			count += 1
@@ -187,6 +196,21 @@ local function refreshList(filter)
 
 	scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, count * 28)
 end
+
+-- Toggle Explorer
+toggleButton.MouseButton1Click:Connect(function()
+	enabled = not enabled
+
+	searchBox.Visible = enabled
+	scrollingFrame.Visible = enabled
+	detailsFrame.Visible = enabled
+
+	toggleButton.Text = enabled and "ON" or "OFF"
+end)
+
+refreshButton.MouseButton1Click:Connect(function()
+	refreshList(searchBox.Text)
+end)
 
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	refreshList(searchBox.Text)
@@ -197,6 +221,24 @@ copyButton.MouseButton1Click:Connect(function()
 		pathBox:CaptureFocus()
 		pathBox.SelectionStart = 1
 		pathBox.CursorPosition = #pathBox.Text + 1
+	end
+end)
+
+game.DescendantAdded:Connect(function(obj)
+	if obj:IsA("RemoteEvent")
+		or obj:IsA("RemoteFunction")
+		or obj:IsA("UnreliableRemoteEvent") then
+
+		refreshList(searchBox.Text)
+	end
+end)
+
+game.DescendantRemoving:Connect(function(obj)
+	if obj:IsA("RemoteEvent")
+		or obj:IsA("RemoteFunction")
+		or obj:IsA("UnreliableRemoteEvent") then
+
+		refreshList(searchBox.Text)
 	end
 end)
 
