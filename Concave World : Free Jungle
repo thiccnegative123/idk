@@ -1,0 +1,14 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local badgeFolder = workspace.obby.Badge
+
+for _, v in ipairs(badgeFolder:GetChildren()) do
+    local part = v:FindFirstChildWhichIsA("BasePart")
+
+    if part then
+        hrp.CFrame = part.CFrame
+        task.wait(0.2)
+    end
+end
