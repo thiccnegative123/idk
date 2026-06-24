@@ -145,7 +145,7 @@ loadstring(game:HttpGet(('https://raw.githubusercontent.com/0Ben1/fe/main/obf_K2
 print("Clicked")
 end)
 Section:NewButton("walk on walls!!!!!", "walk on walls!1!1!!11!!", function()
-loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-wall-walk-fixed-90931"))()
 print("Clicked")
 end)
 Section:NewButton("fe tool animator", "animate your tool", function()
