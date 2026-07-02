@@ -487,7 +487,7 @@ Section:NewButton("xyras bypass(keysytem) updates after 100 years", "LOL ", func
 loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/761069f077f8a235e216590ed825845d0fcb185f454d6c0e027075e39d4af876/download"))()
 print("Clicked")
 end)
-Section:NewButton("questionable bypasser ey: levelup", "LOL ", function()
+Section:NewButton("questionable bypasser key: levelup", "LOL ", function()
 game.StarterGui:SetCore("SendNotification", {
     Title = "KEY IS levelup";
     Text = "KEY IS levelup";
