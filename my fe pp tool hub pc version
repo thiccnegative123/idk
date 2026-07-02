@@ -188,7 +188,7 @@ end)
 Section:NewButton("fe therapy yellow key pp", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Key") 
 if sword then
-    sword.Grip = CFrame.new(1.60999894, 1.8006742, -0.699999988, 0.991859078, 0.0557821095, -0.114457786, -0.058526814, 0.998068273, -0.0207549781, 0.113079622, 0.0272851698, 0.993210018)
+    sword.Grip = CFrame.new(-0.5, 2, -1.30000055, 0, 0, 1, 0, 1, -0, -1, 0, 0)
 else
     warn("Sword not found in Backpack!")
 end
