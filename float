@@ -1,5 +1,5 @@
 game.StarterGui:SetCore("SendNotification", {
-    Title = "press f to start it";
+    Title = "press g to start it";
     Text = "Made by Haxarebest2";
     Duration = 5
     })
@@ -50,11 +50,11 @@ local function disablePlatform()
 	end
 end
 
--- Toggle with F
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 
-	if input.KeyCode == Enum.KeyCode.F then
+	if input.KeyCode == Enum.KeyCode.G then
 		if not active then
 			active = true
 			height = rootPart.Position.Y - 3
@@ -73,7 +73,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
--- Restore collision when you die
+
 humanoid.Died:Connect(function()
 	disablePlatform()
 end)
@@ -123,4 +123,4 @@ RunService.Heartbeat:Connect(function()
 	platform.CFrame = CFrame.new(rootPart.Position.X, height, rootPart.Position.Z)
 end)
 
-print("Press F to toggle platform, Q to lower, T to raise (collision restores on disable or death)")
+print("Press G to toggle platform, Q to lower, T to raise (collision restores on disable or death)")
