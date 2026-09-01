@@ -2,7 +2,7 @@ game.StarterGui:SetCore("SendNotification", {
     Title = "press g to start it";
     Text = "Made by Haxarebest2";
     Duration = 5
-    })
+})
 
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -15,12 +15,11 @@ local humanoid = character:WaitForChild("Humanoid")
 
 local platform = nil
 local active = false
-local height = 0
+local topHeight = 0   -- height of the platform's TOP surface
 local speed = 0.3
 
-local originalCollide = {} -- stores original CanCollide values so we can restore them
+local originalCollide = {}
 
--- Set every BasePart in workspace to CanCollide = false (EXCEPT our platform)
 local function disableAllCollide()
 	for _, part in ipairs(workspace:GetDescendants()) do
 		if part:IsA("BasePart") and part ~= platform then
@@ -30,7 +29,6 @@ local function disableAllCollide()
 	end
 end
 
--- Restore original collisions
 local function restoreCollide()
 	for part, canCollide in pairs(originalCollide) do
 		if part and part.Parent then
@@ -40,7 +38,6 @@ local function restoreCollide()
 	originalCollide = {}
 end
 
--- Full disable: restore collision + remove platform
 local function disablePlatform()
 	active = false
 	restoreCollide()
@@ -50,21 +47,22 @@ local function disablePlatform()
 	end
 end
 
-
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 
 	if input.KeyCode == Enum.KeyCode.G then
 		if not active then
 			active = true
-			height = rootPart.Position.Y - 3
 
 			platform = Instance.new("Part")
-			platform.Size = Vector3.new(10, 1, 10)
+			platform.Size = Vector3.new(10, 6, 10) -- thicker
 			platform.Anchored = true
-			platform.CanCollide = true -- stays solid so you can stand on it
-			platform.Transparency = 1
+			platform.CanCollide = true
+			platform.Transparency = 1 -- semi-visible so you can see it
 			platform.Parent = workspace
+
+			-- set top surface just under the feet
+			topHeight = rootPart.Position.Y - (rootPart.Size.Y / 2) - humanoid.HipHeight - 0.1
 
 			disableAllCollide()
 		else
@@ -73,54 +71,46 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
-
 humanoid.Died:Connect(function()
 	disablePlatform()
 end)
 
--- Reconnect character references on respawn (and make sure new character has collision)
 player.CharacterAdded:Connect(function(newCharacter)
 	character = newCharacter
 	rootPart = newCharacter:WaitForChild("HumanoidRootPart")
 	humanoid = newCharacter:WaitForChild("Humanoid")
 
-	-- Make sure the new character isn't stuck with collision off
 	for _, part in ipairs(newCharacter:GetDescendants()) do
 		if part:IsA("BasePart") then
 			part.CanCollide = true
 		end
 	end
 
-	-- If we died, the platform was already disabled; re-bind death for next life
 	humanoid.Died:Connect(function()
 		disablePlatform()
 	end)
 
-	-- If still active after respawn, keep platform under the new character
 	if active then
-		height = rootPart.Position.Y - 3
+		topHeight = rootPart.Position.Y - (rootPart.Size.Y / 2) - humanoid.HipHeight - 0.1
 	end
 end)
 
--- Move platform
 RunService.Heartbeat:Connect(function()
 	if not active or not platform then return end
 
-	local goingDown = UserInputService:IsKeyDown(Enum.KeyCode.Q)
-	local goingUp = UserInputService:IsKeyDown(Enum.KeyCode.T)
-
-	-- Q down
-	if goingDown then
-		height = height - speed
+	if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+		topHeight = topHeight - speed
+	end
+	if UserInputService:IsKeyDown(Enum.KeyCode.T) then
+		topHeight = topHeight + speed
 	end
 
-	-- T up
-	if goingUp then
-		height = height + speed
-	end
-
-	-- Keep under player
-	platform.CFrame = CFrame.new(rootPart.Position.X, height, rootPart.Position.Z)
+	-- position so the TOP of the platform is at topHeight
+	platform.CFrame = CFrame.new(
+		rootPart.Position.X,
+		topHeight - (platform.Size.Y / 2),
+		rootPart.Position.Z
+	)
 end)
 
-print("Press G to toggle platform, Q to lower, T to raise (collision restores on disable or death)")
+print("Press G to toggle platform, Q to lower, T to raise")
