@@ -1,0 +1,126 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "press f to start it";
+    Text = "Made by Haxarebest2";
+    Duration = 5
+    })
+
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = game.Players.LocalPlayer
+
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+local platform = nil
+local active = false
+local height = 0
+local speed = 0.3
+
+local originalCollide = {} -- stores original CanCollide values so we can restore them
+
+-- Set every BasePart in workspace to CanCollide = false (EXCEPT our platform)
+local function disableAllCollide()
+	for _, part in ipairs(workspace:GetDescendants()) do
+		if part:IsA("BasePart") and part ~= platform then
+			originalCollide[part] = part.CanCollide
+			part.CanCollide = false
+		end
+	end
+end
+
+-- Restore original collisions
+local function restoreCollide()
+	for part, canCollide in pairs(originalCollide) do
+		if part and part.Parent then
+			part.CanCollide = canCollide
+		end
+	end
+	originalCollide = {}
+end
+
+-- Full disable: restore collision + remove platform
+local function disablePlatform()
+	active = false
+	restoreCollide()
+	if platform then
+		platform:Destroy()
+		platform = nil
+	end
+end
+
+-- Toggle with F
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+
+	if input.KeyCode == Enum.KeyCode.F then
+		if not active then
+			active = true
+			height = rootPart.Position.Y - 3
+
+			platform = Instance.new("Part")
+			platform.Size = Vector3.new(10, 1, 10)
+			platform.Anchored = true
+			platform.CanCollide = true -- stays solid so you can stand on it
+			platform.Transparency = 1
+			platform.Parent = workspace
+
+			disableAllCollide()
+		else
+			disablePlatform()
+		end
+	end
+end)
+
+-- Restore collision when you die
+humanoid.Died:Connect(function()
+	disablePlatform()
+end)
+
+-- Reconnect character references on respawn (and make sure new character has collision)
+player.CharacterAdded:Connect(function(newCharacter)
+	character = newCharacter
+	rootPart = newCharacter:WaitForChild("HumanoidRootPart")
+	humanoid = newCharacter:WaitForChild("Humanoid")
+
+	-- Make sure the new character isn't stuck with collision off
+	for _, part in ipairs(newCharacter:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CanCollide = true
+		end
+	end
+
+	-- If we died, the platform was already disabled; re-bind death for next life
+	humanoid.Died:Connect(function()
+		disablePlatform()
+	end)
+
+	-- If still active after respawn, keep platform under the new character
+	if active then
+		height = rootPart.Position.Y - 3
+	end
+end)
+
+-- Move platform
+RunService.Heartbeat:Connect(function()
+	if not active or not platform then return end
+
+	local goingDown = UserInputService:IsKeyDown(Enum.KeyCode.Q)
+	local goingUp = UserInputService:IsKeyDown(Enum.KeyCode.E)
+
+	-- Q down
+	if goingDown then
+		height = height - speed
+	end
+
+	-- E up
+	if goingUp then
+		height = height + speed
+	end
+
+	-- Keep under player
+	platform.CFrame = CFrame.new(rootPart.Position.X, height, rootPart.Position.Z)
+end)
+
+print("Press F to toggle platform, Q to lower, E to raise (collision restores on disable or death)")
