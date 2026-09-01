@@ -107,14 +107,14 @@ RunService.Heartbeat:Connect(function()
 	if not active or not platform then return end
 
 	local goingDown = UserInputService:IsKeyDown(Enum.KeyCode.Q)
-	local goingUp = UserInputService:IsKeyDown(Enum.KeyCode.E)
+	local goingUp = UserInputService:IsKeyDown(Enum.KeyCode.T)
 
 	-- Q down
 	if goingDown then
 		height = height - speed
 	end
 
-	-- E up
+	-- T up
 	if goingUp then
 		height = height + speed
 	end
@@ -123,4 +123,4 @@ RunService.Heartbeat:Connect(function()
 	platform.CFrame = CFrame.new(rootPart.Position.X, height, rootPart.Position.Z)
 end)
 
-print("Press F to toggle platform, Q to lower, E to raise (collision restores on disable or death)")
+print("Press F to toggle platform, Q to lower, T to raise (collision restores on disable or death)")
