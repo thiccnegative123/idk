@@ -14,6 +14,7 @@ local button8 = Instance.new("TextButton", frame1)
 local button9 = Instance.new("TextButton", frame1)
 local button10 = Instance.new("TextButton", frame1)
 local button11 = Instance.new("TextButton", frame1)
+local button12 = Instance.new("TextButton", frame)
 local text = Instance.new("TextLabel", frame)
 local text1 = Instance.new("TextLabel", frame)
 local text2 = Instance.new("TextLabel", frame1)
@@ -108,6 +109,12 @@ button11.Draggable = false
 button11.Active = true
 button11.Text = "penis hammer"
 button11.Visible = false
+
+button12.Size = UDim2.new(0.8,0,0.1,0)
+button12.Position = UDim2.new(0,62,0,169)
+button12.Draggable = false
+button12.Active = true
+button12.Text = "op float"
 
 downbutton.Size = UDim2.new(0.2,0,0.1,0)
 downbutton.Position = UDim2.new(0,224,0,285)
@@ -277,4 +284,8 @@ if sword then
 else
     warn("Sword not found in Backpack!")
 end
+end)
+
+button12.MouseButton1Click:Connect(function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/float"))()
 end)
