@@ -257,7 +257,7 @@ sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
 wait(0.07)
 sendChatMessage("⚪⚪⚪🔴⚪⚪🔴")
 wait(0.07)
-sendChatMessage("🔴🔴🔴🔴⚪🔴🔴")
+sendChatMessage("🔴🔴🔴🔴⚪⚪🔴")
 end)
 
 button8.MouseButton1Click:Connect(function()
