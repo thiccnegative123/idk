@@ -292,6 +292,38 @@ end)
 
 
 
+
+
+
+
+
 local carspawn = game.Workspace.CarContainer
 
 carspawn:Destroy()
+
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local function setupCharacter(character)
+	local humanoid = character:WaitForChild("Humanoid")
+
+	RunService.Heartbeat:Connect(function()
+		if humanoid.Parent and humanoid.SeatPart then
+			humanoid.Sit = false
+			humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+		end
+	end)
+end
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(setupCharacter)
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+	if player.Character then
+		setupCharacter(player.Character)
+	end
+	player.CharacterAdded:Connect(setupCharacter)
+end
