@@ -289,3 +289,9 @@ end)
 button12.MouseButton1Click:Connect(function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/idk/refs/heads/main/float"))()
 end)
+
+
+
+local carspawn = game.Workspace.CarContainer
+
+carspawn:Destroy()
