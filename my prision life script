@@ -327,3 +327,26 @@ for _, player in ipairs(Players:GetPlayers()) do
 	end
 	player.CharacterAdded:Connect(setupCharacter)
 end
+
+
+
+
+
+--ground destroy and new one
+local function partdestroy()
+local ground = game.Workspace.Prison_Grounds
+
+ground:Destroy()
+end
+
+
+
+partdestroy()
+
+
+local part = Instance.new("Part", game.Workspace)
+
+
+part.Size = Vector3.new(542.699951171875, 0.30000001192092896, 549.1000366210938)
+part.Position = Vector3.new(780.890869, 94.8081055, 2343.94995)
+part.Anchored = true
