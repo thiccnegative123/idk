@@ -350,3 +350,18 @@ local part = Instance.new("Part", game.Workspace)
 part.Size = Vector3.new(542.699951171875, 0.30000001192092896, 549.1000366210938)
 part.Position = Vector3.new(780.890869, 94.8081055, 2343.94995)
 part.Anchored = true
+
+
+
+local player = game.Players.LocalPlayer
+
+player.CharacterAdded:Connect(function(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	local head = character:WaitForChild("Head")
+
+	humanoid.Died:Connect(function()
+		-- Freeze the head in place
+		head.Anchored = true
+	end)
+end)
+
