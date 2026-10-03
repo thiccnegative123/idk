@@ -353,15 +353,23 @@ part.Anchored = true
 
 
 
+
+
+
 local player = game.Players.LocalPlayer
 
-player.CharacterAdded:Connect(function(character)
+local function setupCharacter(character)
 	local humanoid = character:WaitForChild("Humanoid")
 	local head = character:WaitForChild("Head")
 
 	humanoid.Died:Connect(function()
-		-- Freeze the head in place
 		head.Anchored = true
 	end)
-end)
+end
+
+if player.Character then
+	setupCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
 
