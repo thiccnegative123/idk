@@ -304,7 +304,7 @@ print("Clicked")
 end)
 Section:NewButton("the strongest battleground INVIS HUB", " ", function()
 loadstring(game:HttpGet("https://gitlab.com/zkay404-group/ProjectYielding/-/raw/main/PYToolkit"))()
-wait(20)
+wait(60)
 local UIS = game:GetService("UserInputService")
 local LunaUI = game:GetService("CoreGui").RobloxGui["Luna UI"]
 
