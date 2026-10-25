@@ -304,6 +304,19 @@ print("Clicked")
 end)
 Section:NewButton("the strongest battleground INVIS HUB", " ", function()
 loadstring(game:HttpGet("https://gitlab.com/zkay404-group/ProjectYielding/-/raw/main/PYToolkit"))()
+
+local UIS = game:GetService("UserInputService")
+local LunaUI = game:GetService("CoreGui").RobloxGui["Luna UI"]
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.K then
+        LunaUI.Enabled = not LunaUI.Enabled
+    end
+end)
+wait(5)
+game:GetService("CoreGui").RobloxGui["Luna UI"].SmartWindow.Frame:Destroy()
 print("Clicked")
 end)
 Section:NewButton("the strongest battlegrounds hub op", "DACE FASTER", function()
