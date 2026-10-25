@@ -303,8 +303,39 @@ loadstring(game:HttpGet("https://rawscripts.net/raw/The-Strongest-Battlegrounds-
 print("Clicked")
 end)
 Section:NewButton("the strongest battleground INVIS HUB", " ", function()
+local gui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+local frame = Instance.new("Frame", gui)
+local button = Instance.new("TextButton", frame)
 
+frame.Size = UDim2.new(0,200,0,150)
+frame.Position = UDim2.new(0,1645,0,-27)
+frame.Draggable = true
+frame.Active = true
+
+button.Size = UDim2.new(0,100,0,125)
+button.Position = UDim2.new(0,51,0,15)
+button.Draggable = false
+button.Active = true
+button.Text = "click me if gui is fully loaded"
+button.TextSize = 11
+
+button.MouseButton1Click:Connect(function()
+local UIS = game:GetService("UserInputService")
+local LunaUI = game:GetService("CoreGui").RobloxGui["Luna UI"]
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.K then
+        LunaUI.Enabled = not LunaUI.Enabled
+    end
+end)
+wait()
+game:GetService("CoreGui").RobloxGui["Luna UI"].SmartWindow.Frame:Destroy()
+end)
 loadstring(game:HttpGet("https://gitlab.com/zkay404-group/ProjectYielding/-/raw/main/PYToolkit"))()
+
+
 
 end)
 Section:NewButton("the strongest battlegrounds hub op", "DACE FASTER", function()
