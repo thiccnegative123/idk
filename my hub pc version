@@ -304,49 +304,7 @@ print("Clicked")
 end)
 Section:NewButton("the strongest battleground INVIS HUB", " ", function()
 
--- Load ProjectYielding
-local success, err = pcall(function()
-    loadstring(game:HttpGet(
-        "https://gitlab.com/zkay404-group/ProjectYielding/-/raw/main/PYToolkit"
-    ))()
-end)
-
-if not success then
-    warn("Hub failed to load:", err)
-    return
-end
-
--- Wait for the hub to initialize
-task.wait(60)
-
-local UIS = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-
--- Find Luna UI
-local RobloxGui = CoreGui:WaitForChild("RobloxGui")
-local LunaUI = RobloxGui:WaitForChild("Luna UI")
-
--- Toggle with K
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.K then
-        LunaUI.Enabled = not LunaUI.Enabled
-        print("Luna UI Enabled:", LunaUI.Enabled)
-    end
-end)
-
--- Destroy the SmartWindow frame after 5 seconds
-task.wait(5)
-
-local smartWindow = LunaUI:FindFirstChild("SmartWindow")
-if smartWindow then
-    local frame = smartWindow:FindFirstChild("Frame")
-    if frame then
-        frame:Destroy()
-        print("SmartWindow Frame destroyed")
-    end
-end
-
-print("Hub loaded. Press K to toggle Luna UI.")
+loadstring(game:HttpGet("https://gitlab.com/zkay404-group/ProjectYielding/-/raw/main/PYToolkit"))()
 
 end)
 Section:NewButton("the strongest battlegrounds hub op", "DACE FASTER", function()
