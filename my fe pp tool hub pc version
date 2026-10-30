@@ -30,6 +30,16 @@ else
 end
 print("Clicked")
 end)
+Section:NewButton("chat rp ragdoll sign pp", "nice", function() 
+local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sword") or game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ClassicSword") or
+game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign")
+if sword then
+    sword.Grip = CFrame.new(1.41058958, 3.0000329, -2.12106323, 1, -0.000201465358, 1.25402585e-05, 0, 0.0621249825, 0.998068392, -0.000201855379, -0.998068392, 0.062124975)
+else
+    warn("Sword not found in Backpack!")
+end
+print("Clicked")
+end)
 Section:NewButton("fe Hammer pp prision life", "nice", function() 
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Hammer")
 if sword then
