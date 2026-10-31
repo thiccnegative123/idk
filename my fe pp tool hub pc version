@@ -31,6 +31,7 @@ end
 print("Clicked")
 end)
 Section:NewButton("chat rp ragdoll sign pp", "nice", function() 
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/Imagnir/r6_anims_for_r15/main/r6_anims.lua'),true))()
 local sword = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sword") or game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("ClassicSword") or
 game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Sign")
 if sword then
