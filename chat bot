@@ -1,6 +1,6 @@
 --==================================================
--- PRIVATE GROQ AI v11
--- SAVE / AUTO-LOAD EDITION
+-- PRIVATE GROQ AI v12
+-- SAVE / AUTO-LOAD / CHAT COMMANDS EDITION
 --==================================================
 
 local Players = game:GetService("Players")
@@ -16,10 +16,12 @@ local httpRequest = request or http_request or (syn and syn.request)
 -- SAVE SYSTEM
 --==================================================
 
-local SAVE_FILE = "PrivateGroqAI_v11.json"
+local SAVE_FILE = "PrivateGroqAI_v12.json"
 
 local function loadSave()
-    if type(readfile) ~= "function" then return nil end
+    if type(readfile) ~= "function" then
+        return nil
+    end
 
     local ok, result = pcall(function()
         return HttpService:JSONDecode(readfile(SAVE_FILE))
@@ -64,6 +66,7 @@ local RADIUS = math.clamp(
 local AUTO_SPEAK = savedData == nil or savedData.autoSpeak ~= false
 
 local MSG_COOLDOWN = 1.5
+local COMMAND_COOLDOWN = 1
 local GLOBAL_SEND_GAP = 1.5
 local MAX_HEIGHT_DIFF = 15
 local CIRCLE_UPDATE_FRAMES = 3
@@ -78,6 +81,7 @@ local blockedPlayers = {}
 
 local playerVersions = {}
 local lastMsg = {}
+local lastCommand = {}
 local pendingPlayers = {}
 local replyQueue = {}
 
@@ -93,6 +97,7 @@ local CircleVisual = nil
 if savedData then
     for id, name in pairs(savedData.blockedPlayers or {}) do
         local userId = tonumber(id)
+
         if userId and type(name) == "string" then
             blockedPlayers[userId] = name
         end
@@ -100,6 +105,7 @@ if savedData then
 
     for id, memory in pairs(savedData.playerMemory or {}) do
         local userId = tonumber(id)
+
         if userId and type(memory) == "table" then
             playerMemory[userId] = memory
         end
@@ -114,6 +120,7 @@ local BLUE = Color3.fromRGB(170, 220, 255)
 local RED = Color3.fromRGB(255, 110, 120)
 local GREEN = Color3.fromRGB(40, 175, 100)
 local GRAY = Color3.fromRGB(90, 90, 110)
+local ORANGE = Color3.fromRGB(240, 170, 60)
 
 --==================================================
 -- UI HELPERS
@@ -200,8 +207,7 @@ local autoButton = button(
 )
 
 local memButton = button(
-    "CLEAR MEM", 325, 80,
-    Color3.fromRGB(240, 170, 60), header
+    "CLEAR MEM", 325, 80, ORANGE, header
 )
 
 local circleButton = button(
@@ -210,8 +216,7 @@ local circleButton = button(
 )
 
 local clearButton = button(
-    "CLEAR", 490, 65,
-    Color3.fromRGB(240, 100, 120), header
+    "CLEAR", 490, 65, Color3.fromRGB(240, 100, 120), header
 )
 
 local saveButton = button(
@@ -230,11 +235,7 @@ header.InputBegan:Connect(function(event)
         or event.UserInputType == Enum.UserInputType.Touch then
 
         dragging = true
-
-        dragTouch =
-            event.UserInputType == Enum.UserInputType.Touch
-            and event or nil
-
+        dragTouch = event.UserInputType == Enum.UserInputType.Touch and event or nil
         dragStart = Vector2.new(event.Position.X, event.Position.Y)
         startPosition = main.Position
     end
@@ -245,9 +246,10 @@ UIS.InputChanged:Connect(function(event)
         event == dragTouch
         or (not dragTouch and event.UserInputType == Enum.UserInputType.MouseMovement)
     ) then
-
-        local delta =
-            Vector2.new(event.Position.X, event.Position.Y) - dragStart
+        local delta = Vector2.new(
+            event.Position.X,
+            event.Position.Y
+        ) - dragStart
 
         main.Position = UDim2.new(
             startPosition.X.Scale,
@@ -290,8 +292,11 @@ local function textBox(y, placeholder, text)
     return object
 end
 
-local keyBox = textBox(54, "Paste your Groq API key...",
-    savedData and savedData.apiKey or "")
+local keyBox = textBox(
+    54,
+    "Paste your Groq API key...",
+    savedData and savedData.apiKey or ""
+)
 
 local personality = textBox(
     98,
@@ -372,7 +377,9 @@ round(sliderKnob, 9)
 local sliding, sliderTouch = false, nil
 
 local function setRadiusFromX(x)
-    if sliderBack.AbsoluteSize.X <= 0 then return end
+    if sliderBack.AbsoluteSize.X <= 0 then
+        return
+    end
 
     local rel = math.clamp(
         (x - sliderBack.AbsolutePosition.X)
@@ -398,10 +405,7 @@ local function startSlider(event)
         or event.UserInputType == Enum.UserInputType.Touch then
 
         sliding = true
-        sliderTouch =
-            event.UserInputType == Enum.UserInputType.Touch
-            and event or nil
-
+        sliderTouch = event.UserInputType == Enum.UserInputType.Touch and event or nil
         setRadiusFromX(event.Position.X)
     end
 end
@@ -470,8 +474,7 @@ local blockButton = button(
 )
 
 local unblockButton = button(
-    "UNBLOCK", 542, 96,
-    GREEN, main, 236, 36
+    "UNBLOCK", 542, 96, GREEN, main, 236, 36
 )
 
 --==================================================
@@ -530,8 +533,6 @@ local function addMessage(sender, message, color)
 
     return label
 end
-
--- Restore displayed chat messages.
 
 if savedData and type(savedData.chatMessages) == "table" then
     for _, item in ipairs(savedData.chatMessages) do
@@ -597,27 +598,21 @@ local function saveState()
     end
 
     local data = {
-        version = 11,
+        version = 12,
 
-        -- API configuration
         apiKey = keyBox.Text,
         personality = personality.Text,
         selectedModel = selectedModel,
 
-        -- Settings
         radius = RADIUS,
         autoSpeak = AUTO_SPEAK,
         testMode = testMode,
         circleVisible = circleVisible,
 
-        -- AI memories
         history = history,
         playerMemory = playerMemory,
 
-        -- Blocked players
         blockedPlayers = blockedPlayers,
-
-        -- Displayed messages
         chatMessages = chatMessages
     }
 
@@ -626,7 +621,11 @@ local function saveState()
     end)
 
     if not ok then
-        addMessage("ERROR", "Could not encode save data: " .. tostring(encoded), RED)
+        addMessage(
+            "ERROR",
+            "Could not encode save data: " .. tostring(encoded),
+            RED
+        )
         return
     end
 
@@ -635,7 +634,12 @@ local function saveState()
     end)
 
     if success then
-        addMessage("SYSTEM", "Successfully saved everything to " .. SAVE_FILE, GREEN)
+        addMessage(
+            "SYSTEM",
+            "Successfully saved everything to " .. SAVE_FILE,
+            GREEN
+        )
+
         saveButton.Text = "SAVED!"
 
         task.delay(2, function()
@@ -703,7 +707,11 @@ for index, model in ipairs(MODELS) do
 
         invalidateAutoReplies()
 
-        addMessage("SYSTEM", "Model changed. Conversation memories cleared.", BLUE)
+        addMessage(
+            "SYSTEM",
+            "Model changed. Conversation memories cleared.",
+            BLUE
+        )
     end)
 end
 
@@ -742,7 +750,8 @@ autoButton.MouseButton1Click:Connect(function()
 
     addMessage(
         "SYSTEM",
-        AUTO_SPEAK and "In-circle chat replies enabled." or "Automatic replies disabled.",
+        AUTO_SPEAK and "In-circle chat replies enabled."
+            or "Automatic replies disabled.",
         BLUE
     )
 end)
@@ -770,7 +779,11 @@ clearButton.MouseButton1Click:Connect(function()
         end
     end
 
-    addMessage("SYSTEM", "Chat and manual chat history cleared.", PURPLE)
+    addMessage(
+        "SYSTEM",
+        "Chat and manual chat history cleared.",
+        PURPLE
+    )
 end)
 
 memButton.MouseButton1Click:Connect(function()
@@ -783,7 +796,7 @@ memButton.MouseButton1Click:Connect(function()
     addMessage(
         "SYSTEM",
         "All AI memories cleared. Block list kept.",
-        Color3.fromRGB(240, 170, 60)
+        ORANGE
     )
 end)
 
@@ -878,7 +891,6 @@ local function setBlocked(shouldBlock)
     blockedPlayers[userId] = shouldBlock and target.name or nil
 
     playerVersions[userId] = (playerVersions[userId] or 0) + 1
-
     pendingPlayers[userId] = nil
     lastMsg[userId] = nil
 
@@ -1009,7 +1021,8 @@ local function callGroq(messages, maxTokens)
             and data.error.message
 
         return nil, type(detail) == "string"
-            and detail or ("HTTP error: " .. tostring(status))
+            and detail
+            or ("HTTP error: " .. tostring(status))
     end
 
     local choice = type(data.choices) == "table"
@@ -1031,7 +1044,9 @@ end
 --==================================================
 
 local function sendMessage()
-    if busy then return end
+    if busy then
+        return
+    end
 
     if not testMode then
         addMessage("SYSTEM", "Enable Test Mode for manual chat.")
@@ -1050,7 +1065,9 @@ local function sendMessage()
 
     local text = trim(input.Text)
 
-    if text == "" then return end
+    if text == "" then
+        return
+    end
 
     if #text > 500 then
         addMessage("ERROR", "Maximum message length is 500 bytes.", RED)
@@ -1147,11 +1164,230 @@ local function sendChat(text)
 end
 
 --==================================================
+-- CHAT COMMANDS
+--==================================================
+
+local JOKES = {
+    "Why don't scientists trust atoms? Because they make up everything!",
+    "I told my computer I needed a break. Now it won't stop sending me KitKat ads.",
+    "Why did the scarecrow win an award? Because he was outstanding in his field!",
+    "What do you call a fish without eyes? A fsh.",
+    "Why did the bicycle fall over? Because it was two-tired.",
+    "I'm reading a book about anti-gravity. It's impossible to put down.",
+    "Why don't eggs tell jokes? They'd crack each other up.",
+    "What did the ocean say to the beach? Nothing, it just waved."
+}
+
+local ROASTS = {
+    "%s, your aim is so bad even your shadow misses you.",
+    "%s, you have the energy of a loading screen at 99%.",
+    "%s, I've seen better decisions made by a broken elevator.",
+    "%s, you're not useless, you're just mostly decorative.",
+    "%s, your brain has great Wi-Fi, but no connection.",
+    "%s, you're like a software update: nobody asked for you, but here you are.",
+    "%s, even your reflection needs a moment to process you.",
+    "%s, you bring chaos wherever you go. Mostly because you get lost."
+}
+
+local MOODS = {
+    "I'm feeling happy and ready to chat!",
+    "I'm feeling a little sarcastic today.",
+    "I'm feeling calm, but dangerously funny.",
+    "I'm feeling angry... please do not test me.",
+    "I'm feeling sad, but I'll still roast someone if needed.",
+    "I'm feeling chaotic. Perfect mood for a coinflip.",
+    "I'm feeling confident. Ask me anything.",
+    "I'm feeling sleepy, but I can still talk."
+}
+
+local function canUseCommand(userId)
+    local now = os.clock()
+
+    if now - (lastCommand[userId] or -math.huge) < COMMAND_COOLDOWN then
+        return false
+    end
+
+    lastCommand[userId] = now
+    return true
+end
+
+local function generateTopicRoast(topic, callback)
+    topic = trim(topic)
+
+    if topic == "" then
+        callback(nil, "Usage: /topicroast (topic)")
+        return
+    end
+
+    local messages = {
+        {
+            role = "system",
+            content = "You are a funny Roblox chatbot. Create ONE original, creative, lighthearted roast about the given topic. "
+                .. "Make it rhyme if you can. Keep it appropriate for a general audience, non-hateful, and under 180 characters. "
+                .. "Reply with ONLY the roast. Do not explain it. Do not use quotation marks."
+        },
+        {
+            role = "user",
+            content = "Roast this topic: " .. topic
+        }
+    }
+
+    local roast, err = callGroq(messages, 100)
+
+    if roast then
+        roast = trim(roast:gsub("[\r\n]+", " "))
+
+        local cut = utf8.offset(roast, 181)
+
+        if cut then
+            roast = roast:sub(1, cut - 1)
+        end
+    end
+
+    callback(roast, err)
+end
+
+local function handleCommand(message)
+    local source = message.TextSource
+    local text = trim(message.Text)
+
+    if not source then
+        return false
+    end
+
+    if text:sub(1, 1) ~= "/" then
+        return false
+    end
+
+    local speaker = Players:GetPlayerByUserId(source.UserId)
+
+    if not speaker then
+        return false
+    end
+
+    -- YOUR commands always work.
+    -- Other players must be inside your circle.
+    if speaker ~= player and not isInsideCircle(speaker) then
+        return false
+    end
+
+    if blockedPlayers[source.UserId] then
+        return true
+    end
+
+    if not canUseCommand(source.UserId) then
+        return true
+    end
+
+    local command, argument = text:match("^/(%S+)%s*(.*)$")
+
+    command = command and string.lower(command) or ""
+
+    if command == "joke" then
+        local joke = JOKES[math.random(1, #JOKES)]
+
+        sendChat(joke)
+        addMessage("COMMAND", joke, PURPLE)
+
+    elseif command == "roast" then
+        local targetName = trim(argument)
+
+        if targetName == "" then
+            sendChat("Usage: /roast (player)")
+            addMessage("COMMAND", "Usage: /roast (player)", RED)
+            return true
+        end
+
+        local target = resolveUsername(targetName)
+
+        if not target then
+            sendChat("Could not find player: " .. targetName)
+            addMessage(
+                "COMMAND",
+                "Could not find player: " .. targetName,
+                RED
+            )
+            return true
+        end
+
+        local roast = string.format(
+            ROASTS[math.random(1, #ROASTS)],
+            target.name
+        )
+
+        sendChat(roast)
+        addMessage("COMMAND", roast, PURPLE)
+
+    elseif command == "topicroast" then
+        local topic = trim(argument)
+
+        if topic == "" then
+            sendChat("Usage: /topicroast (topic)")
+            addMessage("COMMAND", "Usage: /topicroast (topic)", RED)
+            return true
+        end
+
+        addMessage("COMMAND", "Generating a roast for: " .. topic, PURPLE)
+
+        task.spawn(function()
+            local roast, err
+            local ok = pcall(function()
+                generateTopicRoast(topic, function(result, errorText)
+                    roast = result
+                    err = errorText
+                end)
+            end)
+
+            if not ok then
+                addMessage("ERROR", "Topic roast failed.", RED)
+                return
+            end
+
+            if not roast then
+                local errorMessage = err or "Could not generate a roast."
+
+                sendChat(errorMessage)
+                addMessage("COMMAND", errorMessage, RED)
+                return
+            end
+
+            sendChat(roast)
+            addMessage("COMMAND", roast, PURPLE)
+        end)
+
+    elseif command == "coinflip" then
+        local result = math.random(1, 2) == 1 and "HEADS" or "TAILS"
+        local reply = "Coinflip result: " .. result .. "!"
+
+        sendChat(reply)
+        addMessage("COMMAND", reply, PURPLE)
+
+    elseif command == "mood" then
+        local mood = MOODS[math.random(1, #MOODS)]
+
+        sendChat(mood)
+        addMessage("COMMAND", mood, PURPLE)
+
+    else
+        sendChat("Commands: /joke, /roast (player), /topicroast (topic), /coinflip, /mood")
+        addMessage(
+            "COMMAND",
+            "Commands: /joke, /roast (player), /topicroast (topic), /coinflip, /mood",
+            BLUE
+        )
+    end
+
+    return true
+end
+
+--==================================================
 -- PROCESS AUTOMATIC REPLIES
 --==================================================
 
 local function processJob(job)
-    if not isJobValid(job) then return end
+    if not isJobValid(job) then
+        return
+    end
 
     local memory = playerMemory[job.userId] or {}
 
@@ -1178,7 +1414,9 @@ local function processJob(job)
 
     local reply, err = callGroq(messages, 100)
 
-    if not isJobValid(job) then return end
+    if not isJobValid(job) then
+        return
+    end
 
     if not reply then
         addMessage("ERROR", err, RED)
@@ -1199,13 +1437,17 @@ local function processJob(job)
         task.wait(waitTime)
     end
 
-    if not isJobValid(job) then return end
+    if not isJobValid(job) then
+        return
+    end
 
     lastPublicSend = os.clock()
 
     local sent, sendError = sendChat(reply)
 
-    if not isJobValid(job) then return end
+    if not isJobValid(job) then
+        return
+    end
 
     if not sent then
         addMessage("ERROR", sendError, RED)
@@ -1254,7 +1496,13 @@ end)
 --==================================================
 
 TextChatService.MessageReceived:Connect(function(message)
-    if not AUTO_SPEAK then return end
+    if handleCommand(message) then
+        return
+    end
+
+    if not AUTO_SPEAK then
+        return
+    end
 
     local source = message.TextSource
     local text = trim(message.Text)
@@ -1265,7 +1513,9 @@ TextChatService.MessageReceived:Connect(function(message)
 
     local userId = source.UserId
 
-    if blockedPlayers[userId] then return end
+    if blockedPlayers[userId] then
+        return
+    end
 
     local speaker = Players:GetPlayerByUserId(userId)
 
@@ -1277,7 +1527,9 @@ TextChatService.MessageReceived:Connect(function(message)
         return
     end
 
-    if #text > 500 then return end
+    if #text > 500 then
+        return
+    end
 
     local now = os.clock()
 
@@ -1301,7 +1553,6 @@ TextChatService.MessageReceived:Connect(function(message)
     }
 
     pendingPlayers[userId] = job
-
     table.insert(replyQueue, job)
 
     addMessage(speaker.Name, text, BLUE)
@@ -1318,6 +1569,7 @@ Players.PlayerRemoving:Connect(function(target)
 
     pendingPlayers[userId] = nil
     lastMsg[userId] = nil
+    lastCommand[userId] = nil
     playerMemory[userId] = nil
 
     for i = #replyQueue, 1, -1 do
@@ -1382,7 +1634,11 @@ end)
 
 if savedData then
     addMessage("SYSTEM", "Previous save loaded successfully!", GREEN)
-    addMessage("SYSTEM", "Your settings, memories, and blocked players were restored.", BLUE)
+    addMessage(
+        "SYSTEM",
+        "Your settings, memories, and blocked players were restored.",
+        BLUE
+    )
 else
     addMessage("SYSTEM", "No previous save found. Starting fresh.", BLUE)
 end
@@ -1391,6 +1647,12 @@ addMessage(
     "SYSTEM",
     "Enter a Groq key. AUTO replies only to NEW messages received from players inside the circle.",
     BLUE
+)
+
+addMessage(
+    "SYSTEM",
+    "Commands: /joke, /roast (player), /topicroast (topic), /coinflip, /mood",
+    PURPLE
 )
 
 addMessage(
@@ -1405,4 +1667,4 @@ addMessage(
     BLUE
 )
 
-print("PRIVATE GROQ AI v11 loaded: SAVE + AUTO-LOAD enabled.")
+print("PRIVATE GROQ AI v12 loaded: SAVE + AUTO-LOAD + CHAT COMMANDS enabled.")
