@@ -1,6 +1,6 @@
 --==================================================
--- PRIVATE GROQ AI v17
--- QWEN / QUIZ / SAVE / SLIDER / F1 / COMMANDS
+-- PRIVATE GROQ AI v18
+-- QWEN / QUIZ / SAVE / SLIDER / F1 / COMMANDS / NOCD
 -- ALLOWED PLAYERS CAN TALK TO THE AI EVERYWHERE
 --==================================================
 
@@ -18,7 +18,7 @@ local httpRequest = request or http_request or (syn and syn.request)
 --==================================================
 
 local ENV = (getgenv and getgenv()) or _G
-local SESSION_KEY = "PrivateGroqAI_v17_Session"
+local SESSION_KEY = "PrivateGroqAI_v18_Session"
 
 if ENV[SESSION_KEY] and ENV[SESSION_KEY].stop then
     pcall(ENV[SESSION_KEY].stop)
@@ -85,12 +85,10 @@ end
 -- SETTINGS / SAVE
 --==================================================
 
-local SAVE_FILE = "PrivateGroqAI_v17.json"
-local BOT_METADATA = "PrivateGroqAI_v17_Output"
+local SAVE_FILE = "PrivateGroqAI_v18.json"
+local BOT_METADATA = "PrivateGroqAI_v18_Output"
 local API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
--- Qwen restored using the identifier from your original script.
--- GPT-OSS entries keep their previous positions for existing saves.
 local MODELS = {
     {
         name = "GPT-OSS 120B",
@@ -128,7 +126,6 @@ local selectedModel = math.clamp(
     #MODELS
 )
 
--- Prefer the saved model ID when available.
 if type(saved.selectedModelId) == "string" then
     for index, model in ipairs(MODELS) do
         if model.id == saved.selectedModelId then
@@ -148,6 +145,7 @@ local autoSpeak = saved.autoSpeak ~= false
 local testMode = saved.testMode == true
 local circleVisible = saved.circleVisible ~= false
 local restrictToAllowed = saved.restrictToAllowed == true
+local noCooldown = saved.noCooldown == true
 
 local history = type(saved.history) == "table" and saved.history or {}
 local playerMemory = {}
@@ -229,13 +227,13 @@ local header = create("Frame", {
 }, main)
 
 create("TextLabel", {
-    Size = UDim2.fromOffset(175, 44),
-    Position = UDim2.fromOffset(12, 0),
+    Size = UDim2.fromOffset(160, 44),
+    Position = UDim2.fromOffset(10, 0),
     BackgroundTransparency = 1,
-    Text = "PRIVATE GROQ AI v17",
+    Text = "PRIVATE GROQ AI v18",
     TextColor3 = WHITE,
     Font = Enum.Font.GothamBold,
-    TextSize = 14,
+    TextSize = 13,
     TextXAlignment = Enum.TextXAlignment.Left
 }, header)
 
@@ -274,11 +272,13 @@ local function textBox(y, placeholder, value, x, width)
     return object
 end
 
-local testButton = button("TEST", 190, 6, 65, GRAY, header)
-local autoButton = button("AUTO", 260, 6, 65, GREEN, header)
-local memoryButton = button("CLEAR MEM", 330, 6, 85, ORANGE, header)
-local circleButton = button("CIRCLE", 420, 6, 75, BLUE, header)
-local clearButton = button("CLEAR", 500, 6, 65, RED, header)
+-- Header buttons re-laid out to fit the NOCD button.
+local testButton = button("TEST", 170, 6, 58, GRAY, header)
+local autoButton = button("AUTO", 234, 6, 58, GREEN, header)
+local memoryButton = button("MEM", 298, 6, 66, ORANGE, header)
+local circleButton = button("CIRCLE", 370, 6, 62, BLUE, header)
+local nocdButton = button("NOCD", 438, 6, 58, GRAY, header)
+local clearButton = button("CLEAR", 502, 6, 62, RED, header)
 local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
 
 local keyBox = textBox(
@@ -298,7 +298,6 @@ local modelButton = button(
     12, 142, 626, Color3.fromRGB(105, 85, 175)
 )
 
--- Model dropdown includes Qwen.
 local modelMenu = create("Frame", {
     Position = UDim2.fromOffset(12, 178),
     Size = UDim2.fromOffset(626, #MODELS * 36 + 10),
@@ -458,6 +457,9 @@ local function refreshButtons()
         and "ONLY ALLOWED: ON" or "ONLY ALLOWED: OFF"
 
     restrictButton.BackgroundColor3 = restrictToAllowed and GREEN or GRAY
+
+    nocdButton.Text = noCooldown and "NOCD: ON" or "NOCD: OFF"
+    nocdButton.BackgroundColor3 = noCooldown and RED or GRAY
 end
 
 local function updateQuizButton()
@@ -610,7 +612,6 @@ local function canInteract(target)
         return false
     end
 
-    -- Allowed players can talk to the AI everywhere (bypass radius).
     if allowedPlayers[target.UserId] then
         return true
     end
@@ -845,10 +846,13 @@ local function sendChat(text, prefix, validator)
                 return false, "Reply canceled."
             end
 
-            local waitTime = GLOBAL_SEND_GAP - (os.clock() - lastPublicSend)
+            -- NOCD: skip the global send gap when enabled.
+            if not noCooldown then
+                local waitTime = GLOBAL_SEND_GAP - (os.clock() - lastPublicSend)
 
-            if waitTime > 0 then
-                task.wait(waitTime)
+                if waitTime > 0 then
+                    task.wait(waitTime)
+                end
             end
 
             if not session.alive or (validator and not validator()) then
@@ -1416,6 +1420,7 @@ local COMMANDS = {
     "/grabinfo (all|player)",
     "/funfact",
     "/joke",
+    "/mood",
     "/roast (player)",
     "/rhymeroast (player)",
     "/topicroast (topic)",
@@ -1423,32 +1428,17 @@ local COMMANDS = {
     "/rhymetopicroast (topic)",
     "/searchroast (person|meme|topic)",
     "/rhymesearch (person|meme|topic)",
-    "/coinflip",
-    "/mood"
+    "/coinflip"
 }
 
 local KNOWN_COMMANDS = {
     help = true, cmds = true, commands = true,
     quiz = true, info = true, grabinfo = true,
-    funfact = true, joke = true, roast = true,
-    rhymeroast = true, topicroast = true,
+    funfact = true, joke = true, mood = true,
+    roast = true, rhymeroast = true, topicroast = true,
     rhymeroasttopic = true, rhymetopicroast = true,
     searchroast = true, rhymesearch = true,
-    coinflip = true, mood = true
-}
-
-local JOKES = {
-    "Why don't scientists trust atoms? They make up everything!",
-    "Why did the bicycle fall over? It was two-tired.",
-    "I'm reading a book about anti-gravity. It's impossible to put down.",
-    "What did the ocean say to the beach? Nothing, it just waved."
-}
-
-local MOODS = {
-    "Feeling friendly and ready to chat.",
-    "Feeling calm, with a chance of terrible jokes.",
-    "Feeling sleepy, but the punchlines are awake.",
-    "Feeling chaotic. Perfect time for a coinflip."
+    coinflip = true
 }
 
 local ROAST_RULES =
@@ -1485,8 +1475,13 @@ local function handleCommand(message)
 
     local userId = speaker.UserId
 
-    if commandBusy[userId]
-        or os.clock() - (lastCommand[userId] or -math.huge) < 1 then
+    -- NOCD: skip the per-player command cooldown when enabled.
+    if not noCooldown then
+        if commandBusy[userId]
+            or os.clock() - (lastCommand[userId] or -math.huge) < 1 then
+            return true
+        end
+    elseif commandBusy[userId] then
         return true
     end
 
@@ -1532,7 +1527,13 @@ local function handleCommand(message)
             end
 
             if command == "joke" then
-                reply(JOKES[math.random(1, #JOKES)])
+                generate(
+                 
+                         "Do not repeat common overused jokes like the atom, "
+                        .. "bicycle or anti-gravity ones. "
+                        .. "Be creative and original. Reply only with the joke.",
+                    "Tell me a random joke."
+                )
                 return
             end
 
@@ -1544,15 +1545,23 @@ local function handleCommand(message)
             end
 
             if command == "mood" then
-                reply(MOODS[math.random(1, #MOODS)])
+                generate(
+                    "You are a Roblox chatbot replying in character. "
+                        .. "Describe your current mood in ONE short sentence. "
+                        .. "Be playful and vary your answers each time. "
+                        .. "Reply only with the mood description.",
+                    "How do you feel right now?"
+                )
                 return
             end
 
             if command == "funfact" then
                 generate(
                     "Give one short, well-established, family-friendly fun fact. "
-                        .. "Do not make up facts. Reply only with the fact.",
-                    "Give a random fun fact."
+                        .. "Do not make up facts. "
+                        .. "Pick something unusual, not the most obvious fact. "
+                        .. "Reply only with the fact.",
+                    "Tell me a random fun fact."
                 )
                 return
             end
@@ -1860,9 +1869,13 @@ connect(TextChatService.MessageReceived, function(message)
 
     local userId = speaker.UserId
 
-    if pendingPlayers[userId]
-        or os.clock() - (lastMessage[userId] or -math.huge) < 1.5
-        or #replyQueue >= MAX_QUEUE then
+    -- NOCD: skip the 1.5s per-player auto-reply cooldown when enabled.
+    if not noCooldown
+        and os.clock() - (lastMessage[userId] or -math.huge) < 1.5 then
+        return
+    end
+
+    if pendingPlayers[userId] or #replyQueue >= MAX_QUEUE then
         return
     end
 
@@ -1970,6 +1983,19 @@ connect(restrictButton.MouseButton1Click, function()
     restrictToAllowed = not restrictToAllowed
     invalidateReplies()
     refreshButtons()
+end)
+
+connect(nocdButton.MouseButton1Click, function()
+    noCooldown = not noCooldown
+    refreshButtons()
+
+    addMessage(
+        "SYSTEM",
+        noCooldown
+            and "NOCD ON: all cooldowns and send gaps disabled (spam mode)."
+            or "NOCD OFF: spam protection restored.",
+        noCooldown and RED or GREEN
+    )
 end)
 
 local function changeAccess(box, destination, enabled)
@@ -2119,7 +2145,7 @@ connect(saveButton.MouseButton1Click, function()
 
     local ok, err = pcall(function()
         writefile(SAVE_FILE, HttpService:JSONEncode({
-            version = 17,
+            version = 18,
             apiKey = keyBox.Text:gsub("%s", ""),
             personality = personalityBox.Text,
             selectedModel = selectedModel,
@@ -2129,6 +2155,7 @@ connect(saveButton.MouseButton1Click, function()
             testMode = testMode,
             circleVisible = circleVisible,
             restrictToAllowed = restrictToAllowed,
+            noCooldown = noCooldown,
             history = history,
             playerMemory = stringKeys(playerMemory),
             blockedPlayers = stringKeys(blockedPlayers),
@@ -2165,7 +2192,6 @@ connect(Players.PlayerRemoving, function(target)
     commandBusy[userId] = nil
     playerMemory[userId] = nil
 
-    -- Preserve quiz attempts: rejoining does not grant another chance.
     for index = #replyQueue, 1, -1 do
         if replyQueue[index].userId == userId then
             table.remove(replyQueue, index)
@@ -2256,7 +2282,7 @@ end)
 -- STARTUP
 --==================================================
 
-addMessage("SYSTEM", "PRIVATE GROQ AI v17 + QWEN + QUIZ loaded.", GREEN)
+addMessage("SYSTEM", "PRIVATE GROQ AI v18 loaded.", GREEN)
 
 addMessage(
     "SYSTEM",
@@ -2268,6 +2294,12 @@ addMessage(
     "SYSTEM",
     "Allowed players can talk to the AI from anywhere on the map.",
     GREEN
+)
+
+addMessage(
+    "SYSTEM",
+    "NOCD toggles spam protection off/on (send gap + reply/command cooldowns).",
+    ORANGE
 )
 
 addMessage(
@@ -2316,4 +2348,4 @@ addMessage(
     BLUE
 )
 
-print("PRIVATE GROQ AI v17 loaded: QWEN + QUIZ + SLIDER + SAVE + GLOBAL ALLOW")
+print("PRIVATE GROQ AI v18 loaded: AI JOKES + NOCD + QUIZ + SAVE + GLOBAL ALLOW")
