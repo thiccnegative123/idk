@@ -1,6 +1,6 @@
 --==================================================
--- PRIVATE GROQ AI v12
--- SAVE / AUTO-LOAD / CHAT COMMANDS EDITION
+-- PRIVATE GROQ AI v15
+-- SAVE / AUTO-LOAD / CHAT COMMANDS / WEB SEARCH
 --==================================================
 
 local Players = game:GetService("Players")
@@ -16,7 +16,7 @@ local httpRequest = request or http_request or (syn and syn.request)
 -- SAVE SYSTEM
 --==================================================
 
-local SAVE_FILE = "PrivateGroqAI_v12.json"
+local SAVE_FILE = "PrivateGroqAI_v15.json"
 
 local function loadSave()
     if type(readfile) ~= "function" then
@@ -78,6 +78,11 @@ local MAX_QUEUE = 12
 local history = savedData and savedData.history or {}
 local playerMemory = {}
 local blockedPlayers = {}
+local allowedPlayers = {}
+
+local restrictToAllowed = savedData
+    and savedData.restrictToAllowed == true
+    or false
 
 local playerVersions = {}
 local lastMsg = {}
@@ -92,14 +97,20 @@ local lastPublicSend = -math.huge
 local circleVisible = savedData == nil or savedData.circleVisible ~= false
 local CircleVisual = nil
 
--- Restore numeric UserIds from JSON string keys.
-
 if savedData then
     for id, name in pairs(savedData.blockedPlayers or {}) do
         local userId = tonumber(id)
 
         if userId and type(name) == "string" then
             blockedPlayers[userId] = name
+        end
+    end
+
+    for id, name in pairs(savedData.allowedPlayers or {}) do
+        local userId = tonumber(id)
+
+        if userId and type(name) == "string" then
+            allowedPlayers[userId] = name
         end
     end
 
@@ -154,8 +165,8 @@ local gui = create("ScreenGui", {
 }, (gethui and gethui()) or player:WaitForChild("PlayerGui"))
 
 local main = create("Frame", {
-    Size = UDim2.fromOffset(650, 600),
-    Position = UDim2.new(0.5, -325, 0.5, -300),
+    Size = UDim2.fromOffset(650, 640),
+    Position = UDim2.new(0.5, -325, 0.5, -320),
     BackgroundColor3 = BG,
     BorderSizePixel = 0
 }, gui)
@@ -222,6 +233,23 @@ local clearButton = button(
 local saveButton = button(
     "SAVE", 560, 78, GREEN, header
 )
+
+--==================================================
+-- F1 GUI TOGGLE
+--==================================================
+
+local guiVisible = true
+
+UIS.InputBegan:Connect(function(inputObject, processed)
+    if processed then
+        return
+    end
+
+    if inputObject.KeyCode == Enum.KeyCode.F1 then
+        guiVisible = not guiVisible
+        gui.Enabled = guiVisible
+    end
+end)
 
 --==================================================
 -- DRAGGING
@@ -478,12 +506,35 @@ local unblockButton = button(
 )
 
 --==================================================
+-- ALLOWED PLAYERS UI
+--==================================================
+
+local allowBox = textBox(280, "Username or prefix for AI access")
+allowBox.Size = UDim2.new(1, -224, 0, 36)
+
+local allowButton = button(
+    "ALLOW", 438, 96,
+    Color3.fromRGB(70, 140, 200), main, 280, 36
+)
+
+local unallowButton = button(
+    "UNALLOW", 542, 96,
+    Color3.fromRGB(200, 65, 85), main, 280, 36
+)
+
+local restrictButton = button(
+    restrictToAllowed and "ONLY ALLOWED: ON" or "ONLY ALLOWED: OFF",
+    12, 160,
+    restrictToAllowed and GREEN or GRAY, main, 280, 36
+)
+
+--==================================================
 -- CHAT UI
 --==================================================
 
 local chat = create("ScrollingFrame", {
-    Size = UDim2.new(1, -24, 1, -350),
-    Position = UDim2.fromOffset(12, 282),
+    Size = UDim2.new(1, -24, 1, -394),
+    Position = UDim2.fromOffset(12, 326),
     BackgroundColor3 = PANEL,
     BorderSizePixel = 0,
     ScrollBarThickness = 4,
@@ -563,11 +614,11 @@ if savedData and type(savedData.chatMessages) == "table" then
     end
 end
 
-local input = textBox(546, "Write a message...")
+local input = textBox(590, "Write a message...")
 input.Size = UDim2.new(1, -110, 0, 42)
 
 local send = button(
-    "SEND", 553, 85, PURPLE, main, 546, 42
+    "SEND", 553, 85, PURPLE, main, 590, 42
 )
 
 --==================================================
@@ -598,7 +649,7 @@ local function saveState()
     end
 
     local data = {
-        version = 12,
+        version = 15,
 
         apiKey = keyBox.Text,
         personality = personality.Text,
@@ -608,6 +659,9 @@ local function saveState()
         autoSpeak = AUTO_SPEAK,
         testMode = testMode,
         circleVisible = circleVisible,
+
+        restrictToAllowed = restrictToAllowed,
+        allowedPlayers = allowedPlayers,
 
         history = history,
         playerMemory = playerMemory,
@@ -829,6 +883,13 @@ local function resolveUsername(query)
         }
     end
 
+    for userId, name in pairs(allowedPlayers) do
+        candidates[userId] = {
+            userId = userId,
+            name = name
+        }
+    end
+
     local matches = {}
 
     for _, candidate in pairs(candidates) do
@@ -923,6 +984,79 @@ end)
 
 unblockButton.MouseButton1Click:Connect(function()
     setBlocked(false)
+end)
+
+--==================================================
+-- ALLOW / UNALLOW
+--==================================================
+
+local function setAllowed(shouldAllow)
+    local target, err = resolveUsername(allowBox.Text)
+
+    if not target then
+        addMessage("SYSTEM", err, RED)
+        return
+    end
+
+    local userId = target.userId
+
+    if shouldAllow then
+        allowedPlayers[userId] = target.name
+
+        addMessage(
+            "SYSTEM",
+            target.name .. " can now talk to the AI.",
+            GREEN
+        )
+    else
+        allowedPlayers[userId] = nil
+
+        playerVersions[userId] = (playerVersions[userId] or 0) + 1
+        pendingPlayers[userId] = nil
+        lastMsg[userId] = nil
+
+        for i = #replyQueue, 1, -1 do
+            if replyQueue[i].userId == userId then
+                table.remove(replyQueue, i)
+            end
+        end
+
+        addMessage(
+            "SYSTEM",
+            target.name .. " can no longer talk to the AI.",
+            ORANGE
+        )
+    end
+
+    allowBox.Text = target.name
+end
+
+allowButton.MouseButton1Click:Connect(function()
+    setAllowed(true)
+end)
+
+unallowButton.MouseButton1Click:Connect(function()
+    setAllowed(false)
+end)
+
+restrictButton.MouseButton1Click:Connect(function()
+    restrictToAllowed = not restrictToAllowed
+
+    restrictButton.Text = restrictToAllowed
+        and "ONLY ALLOWED: ON"
+        or "ONLY ALLOWED: OFF"
+
+    restrictButton.BackgroundColor3 = restrictToAllowed and GREEN or GRAY
+
+    invalidateAutoReplies()
+
+    addMessage(
+        "SYSTEM",
+        restrictToAllowed
+            and "Only allowed players can talk to the AI."
+            or "Everyone inside the circle can talk to the AI.",
+        BLUE
+    )
 end)
 
 --==================================================
@@ -1039,6 +1173,99 @@ local function callGroq(messages, maxTokens)
     return trim(content)
 end
 
+local function askGroq(system, user, maxTokens)
+    return callGroq({
+        {
+            role = "system",
+            content = system
+        },
+        {
+            role = "user",
+            content = user
+        }
+    }, maxTokens or 180)
+end
+
+local function cleanAiText(text, limit)
+    if type(text) ~= "string" then
+        return nil
+    end
+
+    text = trim(text:gsub("[\r\n]+", " "))
+
+    local cut = utf8.offset(text, limit + 1)
+
+    if cut then
+        text = trim(text:sub(1, cut - 1))
+    end
+
+    return text ~= "" and text or nil
+end
+
+--==================================================
+-- WEB SEARCH
+--==================================================
+
+local function searchWeb(query, maxResults)
+    query = trim(query)
+
+    if query == "" or not httpRequest then
+        return nil, "No search query or HTTP support unavailable."
+    end
+
+    local searchUrl = "https://html.duckduckgo.com/html/?q="
+        .. HttpService:UrlEncode(query)
+
+    local ok, response = pcall(function()
+        return httpRequest({
+            Url = searchUrl,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Mozilla/5.0"
+            }
+        })
+    end)
+
+    if not ok or type(response) ~= "table" then
+        return nil, "Web search request failed."
+    end
+
+    local body = response.Body or ""
+
+    if body == "" then
+        return nil, "Web search returned no results."
+    end
+
+    local results = {}
+
+    for snippet in body:gmatch('<a[^>]-class="result__snippet"[^>]->(.-)</a>') do
+        snippet = snippet
+            :gsub("<[^>]+>", " ")
+            :gsub("&amp;", "&")
+            :gsub("&quot;", '"')
+            :gsub("&#x27;", "'")
+            :gsub("&lt;", "<")
+            :gsub("&gt;", ">")
+            :gsub("%s+", " ")
+
+        snippet = trim(snippet)
+
+        if #snippet > 20 then
+            table.insert(results, snippet)
+        end
+
+        if #results >= (maxResults or 5) then
+            break
+        end
+    end
+
+    if #results == 0 then
+        return nil, "No usable search results found."
+    end
+
+    return table.concat(results, "\n\n")
+end
+
 --==================================================
 -- MANUAL CHAT
 --==================================================
@@ -1147,6 +1374,54 @@ end
 -- ROBLOX CHAT SENDING
 --==================================================
 
+local function splitMessage(text, limit)
+    text = trim(text)
+
+    if text == "" then
+        return {}
+    end
+
+    local parts = {}
+    local start = 1
+
+    while true do
+        local remaining = #text - start + 1
+
+        if remaining <= limit then
+            table.insert(parts, text:sub(start))
+            break
+        end
+
+        local cut = utf8.offset(text, limit + 1, start)
+
+        if not cut then
+            table.insert(parts, text:sub(start))
+            break
+        end
+
+        local space = nil
+
+        for i = cut - 1, start, -1 do
+            if text:sub(i, i) == " " then
+                space = i
+                break
+            end
+        end
+
+        local endPos = space and space - 1 or cut - 1
+
+        table.insert(parts, trim(text:sub(start, endPos)))
+
+        start = space and space + 1 or cut
+
+        while text:sub(start, start) == " " do
+            start = start + 1
+        end
+    end
+
+    return parts
+end
+
 local function sendChat(text)
     local channels = TextChatService:FindFirstChild("TextChannels")
     local general = channels and channels:FindFirstChild("RBXGeneral")
@@ -1155,12 +1430,119 @@ local function sendChat(text)
         return false, "RBXGeneral chat channel unavailable."
     end
 
-    local ok = pcall(function()
-        general:SendAsync(text)
+    local parts = splitMessage(text, 180)
+
+    if #parts == 0 then
+        return true
+    end
+
+    for index, part in ipairs(parts) do
+        if index > 1 then
+            local waitTime = GLOBAL_SEND_GAP - (os.clock() - lastPublicSend)
+
+            if waitTime > 0 then
+                task.wait(waitTime)
+            end
+        end
+
+        lastPublicSend = os.clock()
+
+        local ok = pcall(function()
+            general:SendAsync(part)
+        end)
+
+        if not ok then
+            return false, "Could not send the reply to Roblox chat."
+        end
+    end
+
+    return true
+end
+
+--==================================================
+-- PLAYER INFORMATION
+--==================================================
+
+local function getPlayerInfoData(target)
+    local friendCount = 0
+    local friendsInServer = {}
+
+    local ok, friendsPage = pcall(function()
+        return Players:GetFriendsAsync(target.UserId)
     end)
 
-    return ok,
-        not ok and "Could not send the reply to Roblox chat." or nil
+    if ok and friendsPage then
+        local success, pages = pcall(function()
+            return friendsPage:GetCurrentPage()
+        end)
+
+        if success and type(pages) == "table" then
+            friendCount = #pages
+        end
+    end
+
+    for _, other in ipairs(Players:GetPlayers()) do
+        if other ~= target then
+            local friendOk, isFriend = pcall(function()
+                return target:IsFriendsWith(other.UserId)
+            end)
+
+            if friendOk and isFriend then
+                table.insert(friendsInServer, other.Name)
+            end
+        end
+    end
+
+    return {
+        name = target.Name,
+        displayName = target.DisplayName,
+        accountAge = target.AccountAge,
+        friendCount = friendCount,
+        friendsInServer = friendsInServer
+    }
+end
+
+local function getPlayerInfoText(target)
+    local info = getPlayerInfoData(target)
+
+    local friendsInServer = #info.friendsInServer > 0
+        and table.concat(info.friendsInServer, ", ")
+        or "None"
+
+    return table.concat({
+        "Username: " .. info.name,
+        "Account age: " .. info.accountAge .. " days",
+        "Friends: " .. info.friendCount,
+        "Friends in this server: " .. friendsInServer
+    }, "\n")
+end
+
+local function buildAllPlayersInfo()
+    local parts = {}
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        table.insert(
+            parts,
+            "@" .. target.Name .. ":\n" .. getPlayerInfoText(target)
+        )
+    end
+
+    return table.concat(parts, "\n\n")
+end
+
+local function getPlayerRoastContext(target)
+    local info = getPlayerInfoData(target)
+
+    local friendsInServer = #info.friendsInServer > 0
+        and table.concat(info.friendsInServer, ", ")
+        or "none"
+
+    return table.concat({
+        "Player username: " .. info.name,
+        "Account age: " .. info.accountAge .. " days",
+        "Total friends: " .. info.friendCount,
+        "Friends in this server: " .. friendsInServer
+    }, "\n")
 end
 
 --==================================================
@@ -1199,6 +1581,12 @@ local MOODS = {
     "I'm feeling confident. Ask me anything.",
     "I'm feeling sleepy, but I can still talk."
 }
+
+local COMMAND_LIST = "Commands: /help, /info (player), /grabinfo (all|player), "
+    .. "/funfact, /joke, /roast (player), /topicroast (topic), "
+    .. "/coinflip, /mood, /rhymeroast (player), "
+    .. "/rhymeroasttopic (topic), /rhymetopicroast (topic), "
+    .. "/searchroast (player|topic), /rhymesearch (player|topic)"
 
 local function canUseCommand(userId)
     local now = os.clock()
@@ -1265,8 +1653,6 @@ local function handleCommand(message)
         return false
     end
 
-    -- YOUR commands always work.
-    -- Other players must be inside your circle.
     if speaker ~= player and not isInsideCircle(speaker) then
         return false
     end
@@ -1283,7 +1669,162 @@ local function handleCommand(message)
 
     command = command and string.lower(command) or ""
 
-    if command == "joke" then
+    if command == "help"
+        or command == "cmds"
+        or command == "commands" then
+
+        sendChat(COMMAND_LIST)
+        addMessage("COMMAND", COMMAND_LIST, BLUE)
+
+    elseif command == "info" then
+        local targetName = trim(argument)
+
+        if targetName == "" then
+            sendChat("Usage: /info (player)")
+            addMessage("COMMAND", "Usage: /info (player)", RED)
+            return true
+        end
+
+        local target = resolveUsername(targetName)
+
+        if not target then
+            sendChat("Could not find player: " .. targetName)
+            addMessage(
+                "COMMAND",
+                "Could not find player: " .. targetName,
+                RED
+            )
+            return true
+        end
+
+        local targetPlayer = Players:GetPlayerByUserId(target.userId)
+
+        if not targetPlayer then
+            sendChat("Player is not in this server.")
+            addMessage("COMMAND", "Player is not in this server.", RED)
+            return true
+        end
+
+        local info = getPlayerInfoText(targetPlayer)
+
+        sendChat(info)
+        addMessage("COMMAND", info, PURPLE)
+
+    elseif command == "grabinfo" then
+        local targetName = trim(argument)
+
+        if targetName:lower() == "all" then
+            local info = buildAllPlayersInfo()
+
+            addMessage(
+                "COMMAND",
+                "Sending all player info to the AI...",
+                PURPLE
+            )
+
+            task.spawn(function()
+                local answer, err = askGroq(
+                    "You are a Roblox chatbot. You receive public in-server information about players: "
+                        .. "account age, total friend count, and friends currently in the server. "
+                        .. "Summarize it briefly, neutrally and appropriately. "
+                        .. "Do not invent private information. "
+                        .. "Keep it appropriate for a general audience.",
+                    info,
+                    400
+                )
+
+                local cleaned = cleanAiText(answer, 1000)
+
+                if cleaned then
+                    sendChat(cleaned)
+                    addMessage("AI INFO", cleaned, PURPLE)
+                else
+                    addMessage(
+                        "ERROR",
+                        err or "Could not analyze player info.",
+                        RED
+                    )
+                end
+            end)
+
+            return true
+        end
+
+        if targetName == "" then
+            sendChat("Usage: /grabinfo (all|player)")
+            addMessage("COMMAND", "Usage: /grabinfo (all|player)", RED)
+            return true
+        end
+
+        local target = resolveUsername(targetName)
+
+        if not target then
+            sendChat("Could not find player: " .. targetName)
+            addMessage(
+                "COMMAND",
+                "Could not find player: " .. targetName,
+                RED
+            )
+            return true
+        end
+
+        local targetPlayer = Players:GetPlayerByUserId(target.userId)
+
+        if not targetPlayer then
+            sendChat("Player is not in this server.")
+            addMessage("COMMAND", "Player is not in this server.", RED)
+            return true
+        end
+
+        local info = getPlayerInfoText(targetPlayer)
+
+        task.spawn(function()
+            local answer, err = askGroq(
+                "You are a Roblox chatbot. Use only the provided public in-server information: "
+                    .. "account age, total friend count, and friends currently in the server. "
+                    .. "Give a short, appropriate summary about this player. "
+                    .. "Do not invent facts. Keep it appropriate for a general audience.",
+                info,
+                250
+            )
+
+            local cleaned = cleanAiText(answer, 500)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("AI INFO", cleaned, PURPLE)
+            else
+                addMessage(
+                    "ERROR",
+                    err or "Could not analyze player info.",
+                    RED
+                )
+            end
+        end)
+
+    elseif command == "funfact" then
+        task.spawn(function()
+            local answer, err = askGroq(
+                "Give ONE surprising, true, family-friendly fun fact. "
+                    .. "Reply with only the fact. Maximum 180 characters.",
+                "Give me a random fun fact."
+            )
+
+            local cleaned = cleanAiText(answer, 180)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("COMMAND", cleaned, PURPLE)
+            else
+                addMessage(
+                    "ERROR",
+                    err or "Could not generate a fun fact.",
+                    RED
+                )
+            end
+        end)
+
+    elseif command == "joke" then
         local joke = JOKES[math.random(1, #JOKES)]
 
         sendChat(joke)
@@ -1310,13 +1851,39 @@ local function handleCommand(message)
             return true
         end
 
-        local roast = string.format(
-            ROASTS[math.random(1, #ROASTS)],
-            target.name
-        )
+        local targetPlayer = Players:GetPlayerByUserId(target.userId)
 
-        sendChat(roast)
-        addMessage("COMMAND", roast, PURPLE)
+        if not targetPlayer then
+            sendChat("Player is not in this server.")
+            addMessage("COMMAND", "Player is not in this server.", RED)
+            return true
+        end
+
+        local info = getPlayerRoastContext(targetPlayer)
+
+        task.spawn(function()
+            local answer, err = askGroq(
+                "Create ONE lighthearted, non-hateful roast about a Roblox player. "
+                    .. "You may reference ONLY these public in-server facts: account age, total friend count, "
+                    .. "and friends currently in the server. Do not invent private information. "
+                    .. "Keep it appropriate for a general audience and under 250 characters. "
+                    .. "Reply with only the roast.",
+                info
+            )
+
+            local cleaned = cleanAiText(answer, 250)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("COMMAND", cleaned, PURPLE)
+            else
+                addMessage(
+                    "ERROR",
+                    err or "Could not generate a roast.",
+                    RED
+                )
+            end
+        end)
 
     elseif command == "topicroast" then
         local topic = trim(argument)
@@ -1368,12 +1935,206 @@ local function handleCommand(message)
         sendChat(mood)
         addMessage("COMMAND", mood, PURPLE)
 
-    else
-        sendChat("Commands: /joke, /roast (player), /topicroast (topic), /coinflip, /mood")
+    elseif command == "rhymeroast" then
+        local targetName = trim(argument)
+
+        if targetName == "" then
+            sendChat("Usage: /rhymeroast (player)")
+            addMessage("COMMAND", "Usage: /rhymeroast (player)", RED)
+            return true
+        end
+
+        local target = resolveUsername(targetName)
+
+        if not target then
+            sendChat("Could not find player: " .. targetName)
+            addMessage(
+                "COMMAND",
+                "Could not find player: " .. targetName,
+                RED
+            )
+            return true
+        end
+
+        local targetPlayer = Players:GetPlayerByUserId(target.userId)
+
+        if not targetPlayer then
+            sendChat("Player is not in this server.")
+            addMessage("COMMAND", "Player is not in this server.", RED)
+            return true
+        end
+
+        local info = getPlayerRoastContext(targetPlayer)
+
+        task.spawn(function()
+            local answer, err = askGroq(
+                "Create ONE original, lighthearted rhyming roast about a Roblox player. "
+                    .. "Rhyme using the pronounceable part of the username, not random numbers. "
+                    .. "You may reference ONLY these public in-server facts: account age, total friend count, "
+                    .. "and friends currently in the server. Do not invent private information. "
+                    .. "Keep it non-hateful, general-audience safe and under 250 characters. "
+                    .. "Reply with only the roast.",
+                info
+            )
+
+            local cleaned = cleanAiText(answer, 250)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("COMMAND", cleaned, PURPLE)
+            else
+                addMessage(
+                    "ERROR",
+                    err or "Could not generate a rhyme roast.",
+                    RED
+                )
+            end
+        end)
+
+    elseif command == "rhymeroasttopic"
+        or command == "rhymetopicroast" then
+
+        local topic = trim(argument)
+
+        if topic == "" then
+            sendChat("Usage: /rhymeroasttopic (topic)")
+            addMessage("COMMAND", "Usage: /rhymeroasttopic (topic)", RED)
+            return true
+        end
+
+        task.spawn(function()
+            local answer, err = askGroq(
+                "Create ONE original, lighthearted rhyming roast about the given topic. "
+                    .. "If you do not know the topic, say only: I do not know enough about that topic. "
+                    .. "Keep it non-hateful, general-audience safe and under 250 characters. "
+                    .. "Reply with only the roast. Do not explain it.",
+                "Roast this topic in rhyme: " .. topic,
+                250
+            )
+
+            local cleaned = cleanAiText(answer, 250)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("COMMAND", cleaned, PURPLE)
+            else
+                local errorMessage = err or "Could not generate a rhyme roast."
+
+                sendChat(errorMessage)
+                addMessage("COMMAND", errorMessage, RED)
+            end
+        end)
+
+    elseif command == "searchroast" then
+        local targetName = trim(argument)
+
+        if targetName == "" then
+            sendChat("Usage: /searchroast (player or topic)")
+            addMessage("COMMAND", "Usage: /searchroast (player or topic)", RED)
+            return true
+        end
+
         addMessage(
             "COMMAND",
-            "Commands: /joke, /roast (player), /topicroast (topic), /coinflip, /mood",
-            BLUE
+            "Searching for: " .. targetName,
+            PURPLE
+        )
+
+        task.spawn(function()
+            local searchResults, searchError = searchWeb(targetName, 5)
+
+            if not searchResults then
+                local errorMessage = searchError
+                    or "Could not search for that topic."
+
+                sendChat(errorMessage)
+                addMessage("COMMAND", errorMessage, RED)
+                return
+            end
+
+            local answer, err = askGroq(
+                "You are a Roblox chatbot. You receive web search results about a person or topic. "
+                    .. "Use ONLY the provided search results. "
+                    .. "Create ONE lighthearted, non-hateful roast based on the search results. "
+                    .. "Do not invent facts. Do not harass. Keep it general-audience safe. "
+                    .. "Under 250 characters. Reply with only the roast.",
+                "Search query: " .. targetName
+                    .. "\n\nSearch results:\n"
+                    .. searchResults,
+                250
+            )
+
+            local cleaned = cleanAiText(answer, 250)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("COMMAND", cleaned, PURPLE)
+            else
+                local errorMessage = err or "Could not generate a search roast."
+
+                sendChat(errorMessage)
+                addMessage("COMMAND", errorMessage, RED)
+            end
+        end)
+
+    elseif command == "rhymesearch" then
+        local targetName = trim(argument)
+
+        if targetName == "" then
+            sendChat("Usage: /rhymesearch (player or topic)")
+            addMessage("COMMAND", "Usage: /rhymesearch (player or topic)", RED)
+            return true
+        end
+
+        addMessage(
+            "COMMAND",
+            "Searching for: " .. targetName,
+            PURPLE
+        )
+
+        task.spawn(function()
+            local searchResults, searchError = searchWeb(targetName, 5)
+
+            if not searchResults then
+                local errorMessage = searchError
+                    or "Could not search for that topic."
+
+                sendChat(errorMessage)
+                addMessage("COMMAND", errorMessage, RED)
+                return
+            end
+
+            local answer, err = askGroq(
+                "You are a Roblox chatbot. You receive web search results about a person or topic. "
+                    .. "Use ONLY the provided search results. "
+                    .. "Create ONE original, lighthearted, non-hateful rhyming roast based on the search results. "
+                    .. "Do not invent facts. Do not harass. Keep it general-audience safe. "
+                    .. "Under 250 characters. Reply with only the roast.",
+                "Search query: " .. targetName
+                    .. "\n\nSearch results:\n"
+                    .. searchResults,
+                250
+            )
+
+            local cleaned = cleanAiText(answer, 250)
+
+            if cleaned then
+                sendChat(cleaned)
+                addMessage("COMMAND", cleaned, PURPLE)
+            else
+                local errorMessage = err or "Could not generate a rhyme search roast."
+
+                sendChat(errorMessage)
+                addMessage("COMMAND", errorMessage, RED)
+            end
+        end)
+
+    else
+        sendChat("Unknown command. Type /help for all commands.")
+        addMessage(
+            "COMMAND",
+            "Unknown command. Type /help for all commands.",
+            RED
         )
     end
 
@@ -1517,6 +2278,10 @@ TextChatService.MessageReceived:Connect(function(message)
         return
     end
 
+    if restrictToAllowed and not allowedPlayers[userId] then
+        return
+    end
+
     local speaker = Players:GetPlayerByUserId(userId)
 
     if not speaker or not isInsideCircle(speaker) then
@@ -1649,11 +2414,7 @@ addMessage(
     BLUE
 )
 
-addMessage(
-    "SYSTEM",
-    "Commands: /joke, /roast (player), /topicroast (topic), /coinflip, /mood",
-    PURPLE
-)
+addMessage("SYSTEM", COMMAND_LIST, PURPLE)
 
 addMessage(
     "SYSTEM",
@@ -1663,8 +2424,21 @@ addMessage(
 
 addMessage(
     "SYSTEM",
+    "AI access: type a username or unique prefix, then ALLOW or UNALLOW. "
+        .. "Turn on ONLY ALLOWED to let only allowed players talk to the AI.",
+    BLUE
+)
+
+addMessage(
+    "SYSTEM",
+    "Press F1 to hide or show the GUI.",
+    BLUE
+)
+
+addMessage(
+    "SYSTEM",
     "SAVE stores your current state. Re-executing loads the last saved state.",
     BLUE
 )
 
-print("PRIVATE GROQ AI v12 loaded: SAVE + AUTO-LOAD + CHAT COMMANDS enabled.")
+print("PRIVATE GROQ AI v15 loaded: SAVE + AUTO-LOAD + CHAT COMMANDS + WEB SEARCH enabled.")
