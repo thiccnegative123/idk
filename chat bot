@@ -1,6 +1,7 @@
 --==================================================
 -- PRIVATE GROQ AI v17
 -- QWEN / QUIZ / SAVE / SLIDER / F1 / COMMANDS
+-- ALLOWED PLAYERS CAN TALK TO THE AI EVERYWHERE
 --==================================================
 
 local Players = game:GetService("Players")
@@ -353,7 +354,7 @@ local blockBox = textBox(226, "Username or unique prefix", "", 12, 410)
 local blockButton = button("BLOCK", 430, 228, 100, RED)
 local unblockButton = button("UNBLOCK", 538, 228, 100, GREEN)
 
-local allowBox = textBox(270, "Player allowed to talk to AI", "", 12, 410)
+local allowBox = textBox(270, "Player allowed to talk to AI anywhere", "", 12, 410)
 local allowButton = button("ALLOW", 430, 272, 100, BLUE)
 local unallowButton = button("UNALLOW", 538, 272, 100, RED)
 
@@ -605,9 +606,20 @@ local function canInteract(target)
         return true
     end
 
-    return not blockedPlayers[target.UserId]
-        and (not restrictToAllowed or allowedPlayers[target.UserId] ~= nil)
-        and insideCircle(target)
+    if blockedPlayers[target.UserId] then
+        return false
+    end
+
+    -- Allowed players can talk to the AI everywhere (bypass radius).
+    if allowedPlayers[target.UserId] then
+        return true
+    end
+
+    if restrictToAllowed then
+        return false
+    end
+
+    return insideCircle(target)
 end
 
 local function validJob(job)
@@ -2013,7 +2025,13 @@ local function changeAccess(box, destination, enabled)
     end
 
     invalidateReplies()
-    addMessage("SYSTEM", "Access updated for @" .. target.Name, BLUE)
+    addMessage(
+        "SYSTEM",
+        destination == allowedPlayers and enabled
+            and "Access updated for @" .. target.Name .. " (can talk from anywhere)."
+            or "Access updated for @" .. target.Name,
+        BLUE
+    )
 end
 
 connect(blockButton.MouseButton1Click, function()
@@ -2248,13 +2266,19 @@ addMessage(
 
 addMessage(
     "SYSTEM",
+    "Allowed players can talk to the AI from anywhere on the map.",
+    GREEN
+)
+
+addMessage(
+    "SYSTEM",
     "Enter a topic beside ONLY ALLOWED and press START QUIZ.",
     GREEN
 )
 
 addMessage(
     "SYSTEM",
-    "Or type /quiz minecraft. A/B/C/D, one attempt per player, 60 seconds.",
+    "Or type /quiz minecraft. A/B/C/D, one attempt per player, 30 seconds.",
     BLUE
 )
 
@@ -2292,4 +2316,4 @@ addMessage(
     BLUE
 )
 
-print("PRIVATE GROQ AI v17 loaded: QWEN + QUIZ + SLIDER + SAVE")
+print("PRIVATE GROQ AI v17 loaded: QWEN + QUIZ + SLIDER + SAVE + GLOBAL ALLOW")
