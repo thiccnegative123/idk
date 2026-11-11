@@ -1051,6 +1051,89 @@ local function searchWeb(query)
 end
 
 --==================================================
+-- WEB LOOKUP: FOLLOWER CHECKER
+-- Best-effort Roblox web API reads used by
+-- /info, /grabinfo and /loopgrabinfo.
+--==================================================
+
+-- Generic JSON GET helper (executor request, with a
+-- HttpService:GetAsync fallback when the domain is allowed).
+local function webJson(url)
+    if type(httpRequest) == "function" then
+        local ok, response = pcall(function()
+            return httpRequest({
+                Url = url,
+                Method = "GET",
+                Headers = {
+                    ["Accept"] = "application/json",
+                    ["User-Agent"] = "Roblox/WinInet"
+                }
+            })
+        end)
+
+        if not ok or type(response) ~= "table" then
+            return nil, "Request failed."
+        end
+
+        local status = tonumber(response.StatusCode or response.Status) or 0
+
+        if status < 200 or status >= 300 then
+            return nil, "HTTP " .. status
+        end
+
+        local decoded, data = pcall(function()
+            return HttpService:JSONDecode(response.Body or "")
+        end)
+
+        if not decoded or type(data) ~= "table" then
+            return nil, "Invalid JSON."
+        end
+
+        return data
+    end
+
+    -- Fallback for executors without `request`.
+    local ok, body = pcall(function()
+        return HttpService:GetAsync(url, true)
+    end)
+
+    if not ok then
+        return nil, "HTTP support unavailable."
+    end
+
+    local decoded, data = pcall(function()
+        return HttpService:JSONDecode(body)
+    end)
+
+    if not decoded or type(data) ~= "table" then
+        return nil, "Invalid JSON."
+    end
+
+    return data
+end
+
+-- Follower + following counts for a user.
+local function collectFollowers(userId)
+    local followerData = webJson(
+        "https://friends.roblox.com/v1/users/"
+            .. userId .. "/followers/count"
+    )
+
+    local followingData = webJson(
+        "https://friends.roblox.com/v1/users/"
+            .. userId .. "/followings/count"
+    )
+
+    local followers = type(followerData) == "table"
+        and tonumber(followerData.count) or nil
+
+    local following = type(followingData) == "table"
+        and tonumber(followingData.count) or nil
+
+    return followers, following
+end
+
+--==================================================
 -- PLAYER INFO
 --==================================================
 
@@ -1089,12 +1172,21 @@ local function collectInfo(target)
 
     table.sort(serverFriends)
 
+    -- Followers / following counts.
+    local followerCount, followingCount = collectFollowers(target.UserId)
+
     return {
         name = target.Name,
         accountAge = target.AccountAge,
         friendCount = ok and count or nil,
         friendsInServer = serverFriends,
         friendsKnown = ok,
+
+        -- follower data
+        followerCount = followerCount,
+        followingCount = followingCount,
+        followersKnown = followerCount ~= nil or followingCount ~= nil,
+
         collectedAt = os.time()
     }
 end
@@ -1112,9 +1204,17 @@ local function formatInfo(info)
             or "None"
     end
 
+    local followers = info.followerCount ~= nil
+        and tostring(info.followerCount) or "Unknown"
+
+    local following = info.followingCount ~= nil
+        and tostring(info.followingCount) or "Unknown"
+
     return "@" .. info.name
         .. " | Account age: " .. tostring(info.accountAge) .. " days"
         .. " | Friends: " .. count
+        .. " | Followers: " .. followers
+        .. " | Following: " .. following
         .. " | Friends in server: " .. inServer
 end
 
@@ -1606,8 +1706,7 @@ local function handleCommand(message)
 
             if command == "joke" then
                 generate(
-                 
-                         "Do not repeat common overused jokes like the atom, "
+                    "Do not repeat common overused jokes like the atom, "
                         .. "bicycle or anti-gravity ones. "
                         .. "Be creative and original. Reply only with the joke.",
                     "Tell me a random joke."
@@ -1706,7 +1805,7 @@ local function handleCommand(message)
                     grabbedInfo[target.UserId] = info
                 end
 
-                reply("Player info stored for later AI replies and player roasts.")
+                reply("Player info stored (friends, followers) for later AI replies and player roasts.")
                 return
             end
 
@@ -2440,6 +2539,12 @@ addMessage(
 
 addMessage(
     "SYSTEM",
+    "/info, /grabinfo and /loopgrabinfo also check followers.",
+    BLUE
+)
+
+addMessage(
+    "SYSTEM",
     "SAVE stores your API key in plain text. Do not share the save file.",
     ORANGE
 )
@@ -2458,7 +2563,7 @@ addMessage(
     BLUE
 )
 
-print("PRIVATE GROQ AI v18 loaded: AI JOKES + NOCD + QUIZ + SAVE + GLOBAL ALLOW")
+print("PRIVATE GROQ AI v18 loaded: AI JOKES + NOCD + QUIZ + SAVE + GLOBAL ALLOW + FOLLOWER CHECK")
 addMessage("SYSTEM", "ALLOW CMD controls other players' commands; your commands remain enabled.", BLUE)
 addMessage("SYSTEM", "/loopgrab or /loopgrabinfo starts collection; use /loopgrab off to stop.", BLUE)
 addMessage("SYSTEM", "Loop-grab starts OFF. Collected info may be included in Groq prompts and saved locally. Use with permission and notice.", ORANGE)
