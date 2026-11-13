@@ -1,7 +1,9 @@
 --==================================================
--- PRIVATE GROQ AI v18
+-- PRIVATE GROQ AI v18.1
 -- QWEN / QUIZ / SAVE / SLIDER / F1 / COMMANDS / NOCD
 -- ALLOWED PLAYERS CAN TALK TO THE AI EVERYWHERE
+-- PERSISTENT LOOP-GRAB: only /unloopgrab or
+-- /unloopgrabinfo stops it (survives MEM clear)
 --==================================================
 
 local Players = game:GetService("Players")
@@ -140,6 +142,9 @@ local restrictToAllowed = saved.restrictToAllowed == true
 local noCooldown = saved.noCooldown == true
 local allowCommands = saved.allowCommands == true
 local commandAccessVersion = 0
+
+-- Restored later, after queueLoopGrab exists (declared with forward value).
+local savedLoopGrabEnabled = saved.loopGrabEnabled == true
 
 local history = type(saved.history) == "table" and saved.history or {}
 local playerMemory = {}
@@ -1056,8 +1061,6 @@ end
 -- /info, /grabinfo and /loopgrabinfo.
 --==================================================
 
--- Generic JSON GET helper (executor request, with a
--- HttpService:GetAsync fallback when the domain is allowed).
 local function webJson(url)
     if type(httpRequest) == "function" then
         local ok, response = pcall(function()
@@ -1092,7 +1095,6 @@ local function webJson(url)
         return data
     end
 
-    -- Fallback for executors without `request`.
     local ok, body = pcall(function()
         return HttpService:GetAsync(url, true)
     end)
@@ -1112,7 +1114,6 @@ local function webJson(url)
     return data
 end
 
--- Follower + following counts for a user.
 local function collectFollowers(userId)
     local followerData = webJson(
         "https://friends.roblox.com/v1/users/"
@@ -1172,7 +1173,6 @@ local function collectInfo(target)
 
     table.sort(serverFriends)
 
-    -- Followers / following counts.
     local followerCount, followingCount = collectFollowers(target.UserId)
 
     return {
@@ -1182,7 +1182,6 @@ local function collectInfo(target)
         friendsInServer = serverFriends,
         friendsKnown = ok,
 
-        -- follower data
         followerCount = followerCount,
         followingCount = followingCount,
         followersKnown = followerCount ~= nil or followingCount ~= nil,
@@ -1229,6 +1228,12 @@ local function grabbedContext()
 
     return table.concat(lines, "\n")
 end
+
+--==================================================
+-- PERSISTENT LOOP-GRAB
+-- Survives MEM clear and script re-execution.
+-- Only /unloopgrab or /unloopgrabinfo stops it.
+--==================================================
 
 local loopGrabEnabled = false
 local loopGrabGeneration = 0
@@ -1286,6 +1291,12 @@ task.spawn(function()
         end
     end
 end)
+
+-- Resume loop-grab from the save file / previous session state.
+if savedLoopGrabEnabled then
+    setLoopGrab(true)
+    addMessage("SYSTEM", "Loop-grab restored from save: still collecting.", BLUE)
+end
 
 --==================================================
 -- QUIZ
@@ -1588,6 +1599,8 @@ local COMMANDS = {
     "/grabinfo (all|player)",
     "/loopgrab [on|off|status]",
     "/loopgrabinfo [on|off|status]",
+    "/unloopgrab",
+    "/unloopgrabinfo",
     "/funfact",
     "/joke",
     "/mood",
@@ -1605,6 +1618,7 @@ local KNOWN_COMMANDS = {
     help = true, cmds = true, commands = true,
     quiz = true, info = true, grabinfo = true,
     loopgrab = true, loopgrabinfo = true,
+    unloopgrab = true, unloopgrabinfo = true,
     funfact = true, joke = true, mood = true,
     roast = true, rhymeroast = true, topicroast = true,
     rhymeroasttopic = true, rhymetopicroast = true,
@@ -1743,23 +1757,39 @@ local function handleCommand(message)
                 return
             end
 
-            if command == "loopgrab" or command == "loopgrabinfo" then
+            if command == "loopgrab" or command == "loopgrabinfo"
+                or command == "unloopgrab" or command == "unloopgrabinfo" then
                 if speaker ~= player then
                     reply("Only the script owner can control loop-grab.")
                     return
                 end
+
+                -- /unloopgrab and /unloopgrabinfo always turn collection OFF.
+                if command == "unloopgrab" or command == "unloopgrabinfo" then
+                    setLoopGrab(false)
+                    addMessage("SYSTEM",
+                        "Loop-grab OFF: pending collection canceled.",
+                        ORANGE)
+                    return
+                end
+
                 local mode = argument:lower()
                 if mode == "status" then
-                    addMessage("SYSTEM", loopGrabEnabled and "Loop-grab is ON." or "Loop-grab is OFF.", BLUE)
+                    addMessage("SYSTEM",
+                        loopGrabEnabled and "Loop-grab is ON." or "Loop-grab is OFF.",
+                        BLUE)
                     return
                 end
                 if mode ~= "" and mode ~= "on" and mode ~= "off" then
-                    addMessage("SYSTEM", "Usage: /" .. command .. " [on|off|status]", ORANGE)
+                    addMessage("SYSTEM",
+                        "Usage: /" .. command .. " [on|off|status]", ORANGE)
                     return
                 end
                 setLoopGrab(mode ~= "off")
                 addMessage("SYSTEM", loopGrabEnabled
-                    and "Loop-grab ON: collecting current players and future joiners."
+                    and "Loop-grab ON: collecting current players and future joiners. "
+                        .. "Only /unloopgrab or /unloopgrabinfo stops it "
+                        .. "(survives MEM clear)."
                     or "Loop-grab OFF: pending collection canceled.",
                     loopGrabEnabled and GREEN or ORANGE)
                 return
@@ -2294,15 +2324,21 @@ connect(clearButton.MouseButton1Click, function()
     manualVersion = manualVersion + 1
 end)
 
+-- MEM no longer stops loop-grab; it only clears AI memories.
+-- Collected info is cleared too; loop-grab keeps repopulating it.
 connect(memoryButton.MouseButton1Click, function()
-    setLoopGrab(false)
     history = {}
     playerMemory = {}
     grabbedInfo = {}
     manualVersion = manualVersion + 1
     invalidateReplies()
 
-    addMessage("SYSTEM", "AI memories and grabbed info cleared. Loop-grab stopped.", ORANGE)
+    addMessage("SYSTEM",
+        loopGrabEnabled
+            and "AI memories and grabbed info cleared. "
+                .. "Loop-grab is STILL RUNNING; use /unloopgrab or /unloopgrabinfo to stop it."
+            or "AI memories and grabbed info cleared.",
+        ORANGE)
 end)
 
 --==================================================
@@ -2365,6 +2401,7 @@ connect(saveButton.MouseButton1Click, function()
             restrictToAllowed = restrictToAllowed,
             noCooldown = noCooldown,
             allowCommands = allowCommands,
+            loopGrabEnabled = loopGrabEnabled,
             history = history,
             playerMemory = stringKeys(playerMemory),
             blockedPlayers = stringKeys(blockedPlayers),
@@ -2545,6 +2582,13 @@ addMessage(
 
 addMessage(
     "SYSTEM",
+    "/loopgrabinfo is persistent: MEM clear and re-executing the script "
+        .. "do NOT stop it. Only /unloopgrab or /unloopgrabinfo stops it.",
+    ORANGE
+)
+
+addMessage(
+    "SYSTEM",
     "SAVE stores your API key in plain text. Do not share the save file.",
     ORANGE
 )
@@ -2563,10 +2607,9 @@ addMessage(
     BLUE
 )
 
-print("PRIVATE GROQ AI v18 loaded: AI JOKES + NOCD + QUIZ + SAVE + GLOBAL ALLOW + FOLLOWER CHECK")
+print("PRIVATE GROQ AI v18 loaded: AI JOKES + NOCD + QUIZ + SAVE + GLOBAL ALLOW + PERSISTENT LOOP-GRAB")
 addMessage("SYSTEM", "ALLOW CMD controls other players' commands; your commands remain enabled.", BLUE)
-addMessage("SYSTEM", "/loopgrab or /loopgrabinfo starts collection; use /loopgrab off to stop.", BLUE)
-addMessage("SYSTEM", "Loop-grab starts OFF. Collected info may be included in Groq prompts and saved locally. Use with permission and notice.", ORANGE)
+addMessage("SYSTEM", "Loop-grab starts OFF unless restored from save. Collected info may be included in Groq prompts and saved locally. Use with permission and notice.", ORANGE)
 
 connect(keyBox.FocusLost, function()
     modelsLoaded = false
