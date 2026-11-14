@@ -1,5 +1,6 @@
 -- PRIVATE GROQ AI v18.6
--- GRABGAME / GRABALL / RATEGAME / RATEAVATAR / QUIZGAME
+-- GRABGAME / RATEGAME / RATEAVATAR / QUIZGAME / GRABALL
+-- PART 1 of 2
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local UIS = game:GetService("UserInputService")
@@ -90,6 +91,7 @@ local commandAccessVersion = 0
 local savedLoopGrabEnabled = saved.loopGrabEnabled == true
 local history = type(saved.history) == "table" and saved.history or {}
 local playerMemory, blockedPlayers, allowedPlayers, grabbedInfo = {}, {}, {}, {}
+local permanentInfo = {}
 local gameSnapshot = type(saved.gameSnapshot) == "table" and saved.gameSnapshot or nil
 
 local function restoreMap(source, destination)
@@ -104,6 +106,7 @@ restoreMap(saved.playerMemory, playerMemory)
 restoreMap(saved.blockedPlayers, blockedPlayers)
 restoreMap(saved.allowedPlayers, allowedPlayers)
 restoreMap(saved.grabbedInfo, grabbedInfo)
+restoreMap(saved.permanentInfo, permanentInfo)
 
 local stateVersion, manualVersion = 0, 0
 local replyQueue, pendingPlayers, playerVersions = {}, {}, {}
@@ -476,6 +479,14 @@ local function canInteract(target)
     if allowedPlayers[target.UserId] then return true end
     if restrictToAllowed then return false end
     return insideCircle(target)
+end
+
+-- Commands bypass the circle: ALLOW CMD ON = every non-blocked player, anywhere.
+local function canCommand(target)
+    if target == player then return true end
+    if blockedPlayers[target.UserId] then return false end
+    if allowCommands then return true end
+    return canInteract(target)
 end
 
 local function validJob(job)
@@ -1112,7 +1123,6 @@ local function safeAvatarDescription(target)
     return "Player: @" .. tostring(target.Name)
         .. "\nAvatar details could not be read (character may still be loading)."
 end
-
 -- LOOP-GRAB
 local loopGrabEnabled = false
 local loopGrabGeneration = 0
@@ -1171,9 +1181,100 @@ if savedLoopGrabEnabled then
     setLoopGrab(true)
     addMessage("SYSTEM", "Loop-grab restored from save: still collecting.", BLUE)
 end
+
 --==================================================
+-- PERMANENT STORE (survives MEM + re-execute)
+--==================================================
+local function buildChatSnapshot()
+    local messages = {}
+    for _, child in ipairs(chat:GetChildren()) do
+        if child:IsA("TextLabel") then
+            local color = child.TextColor3
+            table.insert(messages, {
+                text = child.Text,
+                order = child.LayoutOrder,
+                color = {
+                    math.floor(color.R * 255 + 0.5),
+                    math.floor(color.G * 255 + 0.5),
+                    math.floor(color.B * 255 + 0.5)
+                }
+            })
+        end
+    end
+    table.sort(messages, function(a, b) return a.order < b.order end)
+    while #messages > 100 do table.remove(messages, 1) end
+    return messages
+end
+
+local function stringKeys(map)
+    local result = {}
+    for id, value in pairs(map) do result[tostring(id)] = value end
+    return result
+end
+
+local function persistState()
+    if type(writefile) ~= "function" then return false, "writefile unavailable." end
+    local ok, result = pcall(function()
+        writefile(SAVE_FILE, HttpService:JSONEncode({
+            version = 18,
+            apiKey = keyBox.Text:gsub("%s", ""),
+            personality = personalityBox.Text,
+            selectedModel = selectedModel,
+            selectedModelId = MODELS[selectedModel].id,
+            radius = radius,
+            autoSpeak = autoSpeak,
+            testMode = testMode,
+            circleVisible = circleVisible,
+            restrictToAllowed = restrictToAllowed,
+            noCooldown = noCooldown,
+            allowCommands = allowCommands,
+            loopGrabEnabled = loopGrabEnabled,
+            gameSnapshot = gameSnapshot,
+            history = history,
+            playerMemory = stringKeys(playerMemory),
+            blockedPlayers = stringKeys(blockedPlayers),
+            allowedPlayers = stringKeys(allowedPlayers),
+            grabbedInfo = stringKeys(grabbedInfo),
+            permanentInfo = stringKeys(permanentInfo),
+            chatMessages = buildChatSnapshot()
+        }))
+    end)
+    if ok then return true end
+    return false, tostring(result)
+end
+
+local function storedInfoFor(userId)
+    if type(userId) ~= "number" then return nil end
+    local info = permanentInfo[userId]
+    if type(info) == "table" then return info end
+    info = grabbedInfo[userId]
+    if type(info) == "table" then return info end
+    return nil
+end
+
+local function allGrabbedContext()
+    local merged, order = {}, {}
+    local function add(id, info)
+        if type(info) ~= "table" or not info.name then return end
+        local key = tonumber(id) or tostring(info.name)
+        if not merged[key] then
+            merged[key] = info
+            order[#order + 1] = key
+        end
+    end
+    for id, info in pairs(permanentInfo) do add(id, info) end
+    for id, info in pairs(grabbedInfo) do add(id, info) end
+    table.sort(order, function(a, b)
+        return tostring(merged[a].name):lower() < tostring(merged[b].name):lower()
+    end)
+    local lines = {}
+    for _, key in ipairs(order) do
+        lines[#lines + 1] = formatInfo(merged[key])
+    end
+    return table.concat(lines, "\n")
+end
+
 -- QUIZ
---==================================================
 local function decodeQuiz(answer)
     local raw = trim(answer)
         :gsub("^```json%s*", ""):gsub("^```%s*", ""):gsub("%s*```$", "")
@@ -1362,106 +1463,15 @@ local function handleQuizAnswer(userId, text)
     return true
 end
 
---==================================================
--- PERMANENT GRAB STORAGE (survives MEM + re-execute)
---==================================================
-local permanentInfo = {}
-if type(saved.permanentInfo) == "table" then
-    for id, value in pairs(saved.permanentInfo) do
-        local userId = tonumber(id)
-        if userId and type(value) == "table" then permanentInfo[userId] = value end
-    end
-end
-
-local function storedInfoFor(target)
-    return permanentInfo[target.UserId] or grabbedInfo[target.UserId]
-end
-
-local function allGrabbedContext()
-    local lines, seen = {}, {}
-    for id, info in pairs(permanentInfo) do
-        if type(info) == "table" and info.name then
-            seen[id] = true
-            table.insert(lines, formatInfo(info) .. " (permanent /graball data)")
-        end
-    end
-    for id, info in pairs(grabbedInfo) do
-        if type(info) == "table" and info.name and not seen[id] then
-            table.insert(lines, formatInfo(info))
-        end
-    end
-    return table.concat(lines, "\n")
-end
-
-local function stringKeys(map)
-    local result = {}
-    for id, value in pairs(map) do result[tostring(id)] = value end
-    return result
-end
-
-local function buildChatSnapshot()
-    local chatMessages = {}
-    for _, child in ipairs(chat:GetChildren()) do
-        if child:IsA("TextLabel") then
-            local color = child.TextColor3
-            table.insert(chatMessages, {
-                text = child.Text,
-                order = child.LayoutOrder,
-                color = {
-                    math.floor(color.R * 255 + 0.5),
-                    math.floor(color.G * 255 + 0.5),
-                    math.floor(color.B * 255 + 0.5)
-                }
-            })
-        end
-    end
-    table.sort(chatMessages, function(a, b) return a.order < b.order end)
-    while #chatMessages > 100 do table.remove(chatMessages, 1) end
-    return chatMessages
-end
-
-local function persistState()
-    if type(writefile) ~= "function" then return false, "writefile unavailable." end
-    local ok, err = pcall(function()
-        writefile(SAVE_FILE, HttpService:JSONEncode({
-            version = 18,
-            apiKey = keyBox.Text:gsub("%s", ""),
-            personality = personalityBox.Text,
-            selectedModel = selectedModel,
-            selectedModelId = MODELS[selectedModel].id,
-            radius = radius,
-            autoSpeak = autoSpeak,
-            testMode = testMode,
-            circleVisible = circleVisible,
-            restrictToAllowed = restrictToAllowed,
-            noCooldown = noCooldown,
-            allowCommands = allowCommands,
-            loopGrabEnabled = loopGrabEnabled,
-            gameSnapshot = gameSnapshot,
-            permanentInfo = stringKeys(permanentInfo),
-            history = history,
-            playerMemory = stringKeys(playerMemory),
-            blockedPlayers = stringKeys(blockedPlayers),
-            allowedPlayers = stringKeys(allowedPlayers),
-            grabbedInfo = stringKeys(grabbedInfo),
-            chatMessages = buildChatSnapshot()
-        }))
-    end)
-    if not ok then return false, tostring(err) end
-    return true
-end
-
---==================================================
 -- COMMANDS
---==================================================
 local COMMANDS = {
     "/help /cmds /commands",
     "/silentcmd /silenthelp",
     "/talk (message)",
     "/write (message)",
     "/grabgame",
-    "/graball  (permanent, private, game + all players)",
-    "/cleargraball  (owner, wipes /graball data)",
+    "/graball",
+    "/cleargraball",
     "/rategame",
     "/rateavatar (player)  or  /rateava (player)",
     "/quizgame [topic]",
@@ -1523,8 +1533,7 @@ local function handleCommand(message)
     local source = message.TextSource
     if not source or not source.UserId or source.UserId <= 0 then return true end
     local speaker = Players:GetPlayerByUserId(source.UserId)
-    if not speaker or not canInteract(speaker) then return true end
-    if speaker ~= player and not allowCommands then return true end
+    if not speaker or not canCommand(speaker) then return true end
 
     local command, argument = trim(message.Text):match("^/%s*(%S+)%s*(.*)$")
     command = command and command:lower() or ""
@@ -1552,7 +1561,7 @@ local function handleCommand(message)
         return session.alive
             and version == stateVersion
             and speaker.Parent == Players
-            and canInteract(speaker)
+            and canCommand(speaker)
             and (speaker == player or (allowCommands and accessVersion == commandAccessVersion))
     end
 
@@ -1574,7 +1583,7 @@ local function handleCommand(message)
 
             local function playerContext(target)
                 local context = "Username: " .. target.Name
-                local info = storedInfoFor(target)
+                local info = storedInfoFor(target.UserId)
                 if type(info) == "table" then
                     context = context .. "\nPreviously grabbed information:\n" .. formatInfo(info)
                 end
@@ -1614,55 +1623,62 @@ local function handleCommand(message)
             if command == "grabgame" then
                 addMessage("GRABGAME", "Scanning the game explorer...", BLUE)
                 local snapshot = grabGame()
+                local savedOk = persistState()
                 addMessage("GRABGAME", "Stored " .. snapshot.nodes .. " nodes from "
-                    .. snapshot.placeName .. " (PlaceId " .. snapshot.placeId .. ").", GREEN)
+                    .. snapshot.placeName .. " (PlaceId " .. snapshot.placeId .. ")."
+                    .. (savedOk and " Auto-saved, survives MEM and re-execute."
+                        or " Kept in memory (file save failed)."), GREEN)
                 reply("Game snapshot saved (" .. snapshot.nodes
                     .. " nodes). Ask me about the game, /rategame or /quizgame.")
                 return
             end
 
             if command == "graball" then
-                addMessage("GRABALL",
-                    "Grabbing the game + every player permanently...", BLUE)
+                addMessage("GRABALL", "Grabbing the game snapshot and every player...", BLUE)
                 local snapshot = grabGame()
-                local stored, failed = 0, 0
+                addMessage("GRABALL", "Game stored: " .. snapshot.nodes .. " nodes from "
+                    .. snapshot.placeName .. " (PlaceId " .. snapshot.placeId .. ").", GREEN)
+                local collected, failed = 0, 0
                 for _, target in ipairs(Players:GetPlayers()) do
                     if not stillAllowed() then return end
-                    local infoOk, info = pcall(collectInfo, target)
-                    if not stillAllowed() then return end
-                    if infoOk and type(info) == "table" then
+                    local okInfo, info = pcall(collectInfo, target)
+                    if okInfo and type(info) == "table" then
+                        info.userId = target.UserId
+                        info.isOwner = (target == player)
                         permanentInfo[target.UserId] = info
-                        stored = stored + 1
+                        grabbedInfo[target.UserId] = nil
+                        collected = collected + 1
+                        addMessage("GRABALL", "Stored @" .. target.Name
+                            .. (target == player and " (owner)" or ""), BLUE)
                     else
                         failed = failed + 1
+                        addMessage("GRABALL", "Could not read @" .. target.Name, ORANGE)
                     end
                 end
-                local savedOk, saveError = persistState()
-                addMessage("GRABALL", "Game: " .. snapshot.nodes .. " nodes from "
-                    .. snapshot.placeName .. " (PlaceId " .. tostring(snapshot.placeId) .. ").",
+                local savedOk, saveErr = persistState()
+                addMessage("GRABALL", "Done: game snapshot + " .. collected
+                    .. " player(s) stored permanently"
+                    .. (failed > 0 and (" (" .. failed .. " failed)") or "") .. ".",
                     GREEN)
-                addMessage("GRABALL", "Players: stored permanent info for " .. stored
-                    .. (failed > 0 and (" (" .. failed .. " failed)") or "") .. ".", GREEN)
                 addMessage("GRABALL", savedOk
-                    and ("Saved to " .. SAVE_FILE .. ". MEM will NOT clear it, "
-                        .. "and it reloads when you re-execute.")
-                    or ("Kept in memory, but file save failed: " .. tostring(saveError)),
+                    and "Saved to " .. SAVE_FILE .. ". MEM will NOT wipe this; "
+                        .. "only /cleargraball clears it."
+                    or ("Kept in memory, but the file save failed: " .. tostring(saveErr)),
                     savedOk and GREEN or ORANGE)
-                addMessage("GRABALL", "Nothing was posted to public chat.", BLUE)
                 return
             end
 
             if command == "cleargraball" then
                 if speaker ~= player then
-                    reply("Only the script owner can clear permanent /graball data.")
+                    reply("Only the script owner can clear permanent grabs.")
                     return
                 end
                 permanentInfo = {}
-                local savedOk, saveError = persistState()
+                local savedOk = persistState()
                 addMessage("GRABALL", savedOk
-                    and "Permanent /graball data and game snapshot cleared from the save file."
-                    or ("Permanent data cleared in memory, file save failed: "
-                        .. tostring(saveError)), ORANGE)
+                    and "Permanent game + player grabs cleared and the save file updated."
+                    or "Permanent grabs cleared in memory. Save file was not updated.",
+                    ORANGE)
                 return
             end
 
@@ -1854,7 +1870,7 @@ local function handleCommand(message)
                 local context
                 if target then
                     context = "Subject: the player @" .. target.Name
-                    local info = storedInfoFor(target)
+                    local info = storedInfoFor(target.UserId)
                     if type(info) == "table" then
                         context = context .. "\nPreviously grabbed information:\n"
                             .. formatInfo(info)
@@ -1982,7 +1998,9 @@ local function handleCommand(message)
                     reply(resolveError)
                     return
                 end
-                reply(formatInfo(collectInfo(target)))
+                local info = storedInfoFor(target.UserId)
+                if type(info) ~= "table" then info = collectInfo(target) end
+                reply(formatInfo(info))
                 return
             end
 
@@ -1992,7 +2010,7 @@ local function handleCommand(message)
                     reply(resolveError)
                     return
                 end
-                local info = storedInfoFor(target)
+                local info = storedInfoFor(target.UserId)
                 local context = "Username: " .. target.Name
                 if type(info) == "table" then
                     context = context .. "\nPreviously grabbed information:\n"
@@ -2053,9 +2071,7 @@ local function handleCommand(message)
     return true
 end
 
---==================================================
 -- QUIZ BUTTON / MANUAL INPUT
---==================================================
 local function submitQuizTopic()
     local topic = trim(quizTopicBox.Text)
     if topic == "" then
@@ -2142,9 +2158,7 @@ connect(inputBox.FocusLost, function(enterPressed)
     if enterPressed then sendManual() end
 end)
 
---==================================================
 -- CHAT DETECTION / AUTO REPLY WORKER
---==================================================
 connect(TextChatService.MessageReceived, function(message)
     if isBotOutput(message) then return end
     local source = message.TextSource
@@ -2229,16 +2243,16 @@ task.spawn(function()
     end
 end)
 
---==================================================
 -- BUTTON ACTIONS
---==================================================
 connect(allowCmdButton.MouseButton1Click, function()
     allowCommands = not allowCommands
     commandAccessVersion = commandAccessVersion + 1
     refreshButtons()
     addMessage("SYSTEM", allowCommands
-        and "Other eligible players can use commands."
-        or "Only you can use commands.", allowCommands and GREEN or ORANGE)
+        and "ALLOW CMD ON: every non-blocked player can use commands from "
+            .. "anywhere (no circle needed) and with AUTO off."
+        or "ALLOW CMD OFF: only you, allowed players, or players inside the circle.",
+        allowCommands and GREEN or ORANGE)
 end)
 
 connect(testButton.MouseButton1Click, function()
@@ -2346,18 +2360,19 @@ connect(memoryButton.MouseButton1Click, function()
             and "AI memories and grabbed info cleared. Loop-grab is STILL RUNNING; "
                 .. "use /unloopgrab or /unloopgrabinfo to stop it. "
             or "AI memories and grabbed info cleared. ")
+            .. (next(permanentInfo) ~= nil
+                and "Permanent /graball data kept (only /cleargraball wipes it). "
+                or "No permanent /graball data stored. ")
             .. (gameSnapshot
-                and "Game snapshot kept. "
-                or "No game snapshot stored. ")
-            .. "Permanent /graball data kept. "
-            .. "Use /cleargraball if you ever want to wipe it.", ORANGE)
+                and "Game snapshot kept (use /grabgame to refresh it)."
+                or "No game snapshot stored."), ORANGE)
 end)
 
 connect(saveButton.MouseButton1Click, function()
     local ok, err = persistState()
     addMessage(ok and "SYSTEM" or "ERROR",
-        ok and "Saved API key, model, settings, memories, permanent /graball data "
-            .. "and game snapshot."
+        ok and "Saved API key, model, settings, memories, game snapshot "
+            .. "and permanent grabs."
             or tostring(err), ok and GREEN or RED)
     if ok then
         saveButton.Text = "SAVED!"
@@ -2455,14 +2470,16 @@ end)
 --==================================================
 addMessage("SYSTEM", "PRIVATE GROQ AI v18.6 loaded.", GREEN)
 addMessage("SYSTEM",
-    "/grabgame stores the explorer dump (kept after MEM, saved by SAVE). "
+    "/graball grabs the game + every player and stores it PERMANENTLY "
+        .. "(survives MEM and re-execute). /cleargraball wipes it.", BLUE)
+addMessage("SYSTEM",
+    "/grabgame stores the explorer dump (kept after MEM, auto-saved). "
         .. "/rategame rates it, /quizgame [topic] quizzes on it.", BLUE)
 addMessage("SYSTEM",
-    "/graball saves the game + every player permanently: auto-writes "
-        .. SAVE_FILE .. ", survives MEM and re-execute, never posts in public chat.",
-    ORANGE)
-addMessage("SYSTEM",
     "/rateavatar (player) or /rateava (player) rates an avatar 1-10.", GREEN)
+addMessage("SYSTEM",
+    "ALLOW CMD ON: every non-blocked player can use commands anywhere, "
+        .. "even with AUTO off. OFF: circle/allowed rules apply.", ORANGE)
 addMessage("SYSTEM",
     "/help /cmds /silentcmd show the command list privately in this GUI.", BLUE)
 addMessage("SYSTEM",
@@ -2472,4 +2489,4 @@ addMessage("SYSTEM",
     keyBox.Text ~= "" and "Saved API key restored."
         or "Enter your Groq API key, then click SAVE.", BLUE)
 
-print("PRIVATE GROQ AI v18.6 loaded: GRABGAME + GRABALL (PERMANENT) + RATEGAME + RATEAVATAR + QUIZGAME")
+print("PRIVATE GROQ AI v18.6 loaded: GRABALL + GRABGAME + RATEGAME + RATEAVATAR + QUIZGAME")
