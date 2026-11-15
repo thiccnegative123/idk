@@ -44,13 +44,82 @@ end
 
 local SAVE_FILE = "PrivateGroqAI_v18.json"
 local BOT_METADATA = "PrivateGroqAI_v18_Output"
-local API_URL = "https://api.groq.com/openai/v1/chat/completions"
-local MODELS = {
-    {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "GPT-OSS"},
-    {name = "GPT-OSS 20B", id = "openai/gpt-oss-20b", family = "GPT-OSS"},
-    {name = "Qwen 3.8 27B", id = "qwen/qwen3.8-27b", family = "Qwen"},
-    {name = "ALLaM 2 7B", id = "allam-2-7b", family = "ALLaM"}
+local PROVIDERS = {
+    {
+        id = "groq",
+        name = "Groq",
+        url = "https://api.groq.com/openai/v1/chat/completions",
+        keyName = "Groq API key",
+        models = {
+            {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "GPT-OSS"},
+            {name = "GPT-OSS 20B", id = "openai/gpt-oss-20b", family = "GPT-OSS"},
+            {name = "Qwen 3 32B", id = "qwen/qwen3-32b", family = "Qwen"},
+            {name = "Llama 3.3 70B", id = "llama-3.3-70b-versatile", family = "Llama"},
+            {name = "ALLaM 2 7B", id = "allam-2-7b", family = "ALLaM"}
+        }
+    },
+    {
+        id = "openrouter",
+        name = "OpenRouter",
+        url = "https://openrouter.ai/api/v1/chat/completions",
+        keyName = "OpenRouter API key",
+        models = {
+            {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "OpenAI"},
+            {name = "Claude Sonnet", id = "anthropic/claude-3.7-sonnet", family = "Anthropic"},
+            {name = "Gemini Flash", id = "google/gemini-2.0-flash-001", family = "Google"},
+            {name = "DeepSeek Chat", id = "deepseek/deepseek-chat", family = "DeepSeek"},
+            {name = "Llama 3.3 70B", id = "meta-llama/llama-3.3-70b-instruct", family = "Meta"},
+            {name = "Qwen 3 32B", id = "qwen/qwen3-32b", family = "Qwen"}
+        }
+    },
+    {
+        id = "together",
+        name = "Together AI",
+        url = "https://api.together.xyz/v1/chat/completions",
+        keyName = "Together AI API key",
+        models = {
+            {name = "Llama 3.3 70B", id = "meta-llama/Llama-3.3-70B-Instruct-Turbo", family = "Meta"},
+            {name = "Qwen 2.5 72B", id = "Qwen/Qwen2.5-72B-Instruct-Turbo", family = "Qwen"},
+            {name = "DeepSeek V3", id = "deepseek-ai/DeepSeek-V3", family = "DeepSeek"},
+            {name = "Mistral Small", id = "mistralai/Mistral-Small-24B-Instruct-2501", family = "Mistral"}
+        }
+    },
+    {
+        id = "deepinfra",
+        name = "DeepInfra",
+        url = "https://api.deepinfra.com/v1/openai/chat/completions",
+        keyName = "DeepInfra API key",
+        models = {
+            {name = "Llama 3.3 70B", id = "meta-llama/Llama-3.3-70B-Instruct", family = "Meta"},
+            {name = "Qwen 2.5 72B", id = "Qwen/Qwen2.5-72B-Instruct", family = "Qwen"},
+            {name = "DeepSeek V3", id = "deepseek-ai/DeepSeek-V3", family = "DeepSeek"},
+            {name = "Mistral Small", id = "mistralai/Mistral-Small-24B-Instruct-2501", family = "Mistral"}
+        }
+    },
+    {
+        id = "mistral",
+        name = "Mistral AI",
+        url = "https://api.mistral.ai/v1/chat/completions",
+        keyName = "Mistral API key",
+        models = {
+            {name = "Mistral Large", id = "mistral-large-latest", family = "Mistral"},
+            {name = "Mistral Small", id = "mistral-small-latest", family = "Mistral"},
+            {name = "Mistral Nemo", id = "open-mistral-nemo", family = "Mistral"}
+        }
+    },
+    {
+        id = "custom",
+        name = "Custom OpenAI-compatible",
+        url = "https://your-provider.example.com/v1/chat/completions",
+        keyName = "Custom provider API key",
+        models = {
+            {name = "Custom model", id = "your-model-id", family = "Custom"}
+        }
+    }
 }
+
+local selectedProvider = 1
+local selectedModel = 1
 local QUIZ_SECONDS = 30
 local TRIVIA_SECONDS = 20
 local GLOBAL_SEND_GAP = 1.5
@@ -72,10 +141,22 @@ if type(readfile) == "function" then
     if ok and type(data) == "table" then saved = data end
 end
 
-local selectedModel = math.clamp(math.floor(tonumber(saved.selectedModel) or 1), 1, #MODELS)
-if type(saved.selectedModelId) == "string" then
-    for index, model in ipairs(MODELS) do
-        if model.id == saved.selectedModelId then selectedModel = index break end
+local savedProviderId = saved.selectedProviderId
+local savedModelId = saved.selectedModelId
+
+for providerIndex, provider in ipairs(PROVIDERS) do
+    if provider.id == savedProviderId then
+        selectedProvider = providerIndex
+        break
+    end
+end
+
+local currentProvider = PROVIDERS[selectedProvider]
+
+for modelIndex, model in ipairs(currentProvider.models) do
+    if model.id == savedModelId then
+        selectedModel = modelIndex
+        break
     end
 end
 
@@ -147,10 +228,10 @@ local header = create("Frame", {
 }, main)
 
 create("TextLabel", {
-    Size = UDim2.fromOffset(160, 44),
+    Size = UDim2.fromOffset(88, 44),
     Position = UDim2.fromOffset(10, 0),
     BackgroundTransparency = 1,
-    Text = "PRIVATE GROQ AI v18",
+    Text = "AI v18.9",
     TextColor3 = WHITE,
     Font = Enum.Font.GothamBold,
     TextSize = 13,
@@ -190,6 +271,7 @@ local function textBox(y, placeholder, value, x, width)
     return object
 end
 
+local providerButton = button("PROVIDERS", 100, 6, 66, BLUE, header)
 local testButton = button("TEST", 170, 6, 58, GRAY, header)
 local autoButton = button("AUTO", 234, 6, 58, GREEN, header)
 local memoryButton = button("MEM", 298, 6, 66, ORANGE, header)
@@ -199,7 +281,7 @@ local clearButton = button("CLEAR", 502, 6, 62, RED, header)
 local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
 local keyBox = textBox(54, "Groq API key", type(saved.apiKey) == "string" and saved.apiKey or "")
 local personalityBox = textBox(98, "Personality", saved.personality or "Friendly")
-local modelButton = button("MODEL: " .. MODELS[selectedModel].name .. "  v",
+local modelButton = button("MODEL: " .. PROVIDERS[selectedProvider].models[selectedModel].name .. "  v",
     12, 142, 626, Color3.fromRGB(105, 85, 175))
 
 local modelMenu = create("ScrollingFrame", {
@@ -390,12 +472,17 @@ local modelOptionConnections = {}
 local function rebuildModelMenu()
     for _, connection in ipairs(modelOptionConnections) do connection:Disconnect() end
     modelOptionConnections = {}
+
     for _, child in ipairs(modelMenu:GetChildren()) do
         if child:IsA("GuiObject") then child:Destroy() end
     end
+
+    local provider = PROVIDERS[selectedProvider]
     local y, lastFamily = 5, nil
-    for index, model in ipairs(MODELS) do
+
+    for index, model in ipairs(provider.models) do
         local optionIndex, optionModel = index, model
+
         if model.family ~= lastFamily then
             create("TextLabel", {
                 Position = UDim2.fromOffset(10, y),
@@ -408,33 +495,133 @@ local function rebuildModelMenu()
                 TextXAlignment = Enum.TextXAlignment.Left,
                 ZIndex = 21
             }, modelMenu)
+
             y = y + 28
             lastFamily = model.family
         end
+
         local option = button(model.name, 5, y, 604,
             index == selectedModel and GREEN or PANEL, modelMenu)
         option.ZIndex = 21
         option.TextTruncate = Enum.TextTruncate.AtEnd
+
         table.insert(modelOptionConnections, option.MouseButton1Click:Connect(function()
             if not session.alive then return end
             modelMenu.Visible = false
+
             if selectedModel == optionIndex then return end
+
             selectedModel = optionIndex
             modelButton.Text = "MODEL: " .. optionModel.name .. "  v"
+
             history = {}
             playerMemory = {}
             manualVersion = manualVersion + 1
             invalidateReplies()
+
             addMessage("MODEL", "Selected " .. optionModel.id, BLUE)
         end))
+
         y = y + 36
     end
+
     modelMenu.CanvasSize = UDim2.fromOffset(0, y + 5)
 end
 
 rebuildModelMenu()
+
 connect(modelButton.MouseButton1Click, function()
     modelMenu.Visible = not modelMenu.Visible
+end)
+
+local providerMenu = create("ScrollingFrame", {
+    Position = UDim2.fromOffset(12, 178),
+    Size = UDim2.fromOffset(626, 300),
+    BackgroundColor3 = BG,
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 20,
+    ScrollBarThickness = 6,
+    CanvasSize = UDim2.new(),
+    ScrollingDirection = Enum.ScrollingDirection.Y
+}, main)
+round(providerMenu)
+
+local function copyProviderLink(provider)
+    local copied = false
+    if type(setclipboard) == "function" then
+        local ok = pcall(function()
+            setclipboard(provider.url)
+        end)
+        copied = ok
+    elseif type(writefile) == "function" then
+        copied = false
+    end
+    return copied
+end
+
+local function refreshProviderMenu()
+    for _, child in ipairs(providerMenu:GetChildren()) do
+        if child:IsA("GuiObject") then child:Destroy() end
+    end
+
+    local y = 5
+
+    for providerIndex, provider in ipairs(PROVIDERS) do
+        local option = button(
+            provider.name .. " - " .. provider.url,
+            5, y, 604,
+            providerIndex == selectedProvider and GREEN or PANEL,
+            providerMenu
+        )
+        option.TextSize = 10
+        option.ZIndex = 21
+        option.TextTruncate = Enum.TextTruncate.AtEnd
+
+        option.MouseButton1Click:Connect(function()
+            if not session.alive then return end
+
+            selectedProvider = providerIndex
+            selectedModel = 1
+
+            providerMenu.Visible = false
+            providerButton.Text = provider.name
+            modelButton.Text = "MODEL: " .. provider.models[1].name
+
+            history = {}
+            playerMemory = {}
+            manualVersion = manualVersion + 1
+            invalidateReplies()
+
+            local copied = copyProviderLink(provider)
+
+            addMessage("PROVIDER", "Selected " .. provider.name, BLUE)
+            addMessage("PROVIDER", "Endpoint: " .. provider.url, BLUE)
+
+            if copied then
+                addMessage("PROVIDER", "Provider link copied to clipboard.", GREEN)
+            else
+                addMessage("PROVIDER", "Clipboard copying is not supported by this executor.", ORANGE)
+            end
+
+            addMessage("PROVIDER", "Enter your " .. provider.keyName .. ", then click SAVE.", ORANGE)
+            addMessage("PROVIDER", "Available models:", BLUE)
+
+            for _, model in ipairs(provider.models) do
+                addMessage("MODEL", model.name .. " - " .. model.id, WHITE)
+            end
+        end)
+
+        y = y + 36
+    end
+
+    providerMenu.CanvasSize = UDim2.fromOffset(0, y + 5)
+end
+
+refreshProviderMenu()
+
+connect(providerButton.MouseButton1Click, function()
+    providerMenu.Visible = not providerMenu.Visible
 end)
 
 local function resolvePlayer(query)
@@ -658,23 +845,32 @@ local function publish(text, prefix, validator)
     return sent
 end
 
-local function callGroq(messages, maxTokens)
-    if type(httpRequest) ~= "function" then return nil, "HTTP support unavailable." end
+local function callProvider(messages, maxTokens)
+    if type(httpRequest) ~= "function" then
+        return nil, "HTTP support unavailable."
+    end
+
+    local provider = PROVIDERS[selectedProvider]
+    local model = provider.models[selectedModel]
+
     local key = keyBox.Text:gsub("%s", "")
-    if key == "" then return nil, "Enter your Groq API key." end
-    local modelId = MODELS[selectedModel].id
+    if key == "" then
+        return nil, "Enter your " .. provider.keyName .. "."
+    end
+
     local body = HttpService:JSONEncode({
-        model = modelId,
+        model = model.id,
         messages = messages,
         temperature = 0.7,
         max_tokens = maxTokens or 900
     })
-    local lastError = "Groq HTTP request failed."
+
+    local lastError = provider.name .. " HTTP request failed."
 
     for attempt = 1, 2 do
         local ok, response = pcall(function()
             return httpRequest({
-                Url = API_URL,
+                Url = provider.url,
                 Method = "POST",
                 Headers = {
                     ["Content-Type"] = "application/json",
@@ -688,38 +884,47 @@ local function callGroq(messages, maxTokens)
             local decoded, data = pcall(function()
                 return HttpService:JSONDecode(response.Body or "")
             end)
+
             local status = tonumber(response.StatusCode or response.Status) or 0
 
             if decoded and type(data) == "table"
                 and status >= 200 and status < 300 then
+
                 local choice = type(data.choices) == "table" and data.choices[1]
                 local content = choice and choice.message and choice.message.content
+
                 if type(content) ~= "string" or trim(content) == "" then
                     return nil, "Model returned no text. Try another model."
                 end
+
                 return trim(content)
             end
 
-            if decoded and type(data) == "table" and type(data.error) == "table"
+            if decoded and type(data) == "table"
+                and type(data.error) == "table"
                 and data.error.message then
-                lastError = modelId .. ": " .. tostring(data.error.message)
+                lastError = model.id .. ": " .. tostring(data.error.message)
             else
-                lastError = modelId .. ": Groq HTTP " .. tostring(status)
+                lastError = model.id .. ": " .. provider.name .. " HTTP " .. tostring(status)
             end
 
-            if status ~= 429 and status < 500 then return nil, lastError end
+            if status ~= 429 and status < 500 then
+                return nil, lastError
+            end
         else
-            lastError = "Groq HTTP request failed."
+            lastError = provider.name .. " HTTP request failed."
         end
 
-        if attempt < 2 and session.alive then task.wait(1.5) end
+        if attempt < 2 and session.alive then
+            task.wait(1.5)
+        end
     end
 
     return nil, lastError
 end
 
-local function askGroq(system, user)
-    return callGroq({
+local function askProvider(system, user)
+    return callProvider({
         {role = "system", content = system},
         {role = "user", content = user}
     }, 900)
@@ -1218,8 +1423,10 @@ local function persistState()
             version = 18,
             apiKey = keyBox.Text:gsub("%s", ""),
             personality = personalityBox.Text,
+            selectedProvider = selectedProvider,
+            selectedProviderId = PROVIDERS[selectedProvider].id,
             selectedModel = selectedModel,
-            selectedModelId = MODELS[selectedModel].id,
+            selectedModelId = PROVIDERS[selectedProvider].models[selectedModel].id,
             radius = radius,
             autoSpeak = autoSpeak,
             testMode = testMode,
@@ -1357,7 +1564,7 @@ local function startQuiz(topic, stillAllowed, extraContext, failureMessage)
             system = system .. " Build the question from this game data: " .. extraContext
         end
 
-        local answer, requestError = askGroq(system, "Quiz topic: " .. topic)
+        local answer, requestError = askProvider(system, "Quiz topic: " .. topic)
         if not stillAllowed() then return end
 
         if not answer then
@@ -1572,7 +1779,7 @@ local function handleCommand(message)
             local function reply(text, prefix) return publish(text, prefix, stillAllowed) end
 
             local function generate(system, context)
-                local answer, requestError = askGroq(system, context)
+                local answer, requestError = askProvider(system, context)
                 if not stillAllowed() then return end
                 local cleaned = cleanAnswer(answer)
                 if cleaned then
@@ -1881,7 +2088,7 @@ local function handleCommand(message)
                 end
                 triviaActive = true
                 addMessage("TRIVIA", "Generating a trivia question about " .. argument, BLUE)
-                local answer, requestError = askGroq(
+                local answer, requestError = askProvider(
                     "Create ONE trivia question about the topic. Use a "
                         .. "well-established fact with exactly one unambiguous "
                         .. "correct answer. Specify the exact release/event when "
@@ -2191,7 +2398,7 @@ local function sendManual()
             }}
             for _, item in ipairs(history) do table.insert(messages, item) end
             table.insert(messages, {role = "user", content = text})
-            local answer, requestError = callGroq(messages, 900)
+            local answer, requestError = callProvider(messages, 900)
             if session.alive and version == manualVersion then
                 if answer then
                     appendTurn(history, text, answer)
@@ -2275,7 +2482,7 @@ task.spawn(function()
                 }}
                 for _, item in ipairs(memory) do table.insert(messages, item) end
                 table.insert(messages, {role = "user", content = job.text})
-                local answer, requestError = callGroq(messages, 500)
+                local answer, requestError = callProvider(messages, 500)
                 if not validJob(job) then return end
                 if not answer then
                     addMessage("ERROR", requestError, RED)
@@ -2524,7 +2731,8 @@ end)
 --==================================================
 -- STARTUP
 --==================================================
-addMessage("SYSTEM", "PRIVATE GROQ AI v18.6 loaded.", GREEN)
+addMessage("SYSTEM", "PRIVATE AI v18.9 loaded - 6-provider edition.", GREEN)
+addMessage("SYSTEM", "Click PROVIDERS to view providers. Selecting one copies its API link.", BLUE)
 addMessage("SYSTEM",
     "/graball grabs the game + every player and stores it PERMANENTLY "
         .. "(survives MEM and re-execute). /cleargraball wipes it.", BLUE)
