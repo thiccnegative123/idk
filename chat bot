@@ -44,76 +44,101 @@ end
 
 local SAVE_FILE = "PrivateGroqAI_v18.json"
 local BOT_METADATA = "PrivateGroqAI_v18_Output"
+local FREE_ONLY = true
+
 local PROVIDERS = {
     {
         id = "groq",
-        name = "Groq",
+        name = "Groq (Free tier)",
         url = "https://api.groq.com/openai/v1/chat/completions",
+        modelsUrl = "https://api.groq.com/openai/v1/models",
+        keyUrl = "https://console.groq.com/keys",
         keyName = "Groq API key",
+        freeOnly = true,
         models = {
-            {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "GPT-OSS"},
-            {name = "GPT-OSS 20B", id = "openai/gpt-oss-20b", family = "GPT-OSS"},
+            {name = "Llama 3.3 70B", id = "llama-3.3-70b-versatile", family = "Meta"},
+            {name = "Llama 3.1 8B", id = "llama-3.1-8b-instant", family = "Meta"},
+            {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "OpenAI"},
+            {name = "GPT-OSS 20B", id = "openai/gpt-oss-20b", family = "OpenAI"},
             {name = "Qwen 3 32B", id = "qwen/qwen3-32b", family = "Qwen"},
-            {name = "Llama 3.3 70B", id = "llama-3.3-70b-versatile", family = "Llama"},
-            {name = "ALLaM 2 7B", id = "allam-2-7b", family = "ALLaM"}
+            {name = "Kimi K2", id = "moonshotai/kimi-k2-instruct", family = "Moonshot"},
+            {name = "Gemma 3 27B", id = "gemma2-9b-it", family = "Google"}
         }
     },
     {
         id = "openrouter",
-        name = "OpenRouter",
+        name = "OpenRouter (Free models)",
         url = "https://openrouter.ai/api/v1/chat/completions",
+        modelsUrl = "https://openrouter.ai/api/v1/models",
+        keyUrl = "https://openrouter.ai/keys",
         keyName = "OpenRouter API key",
+        freeOnly = true,
         models = {
-            {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "OpenAI"},
-            {name = "Claude Sonnet", id = "anthropic/claude-3.7-sonnet", family = "Anthropic"},
-            {name = "Gemini Flash", id = "google/gemini-2.0-flash-001", family = "Google"},
-            {name = "DeepSeek Chat", id = "deepseek/deepseek-chat", family = "DeepSeek"},
-            {name = "Llama 3.3 70B", id = "meta-llama/llama-3.3-70b-instruct", family = "Meta"},
-            {name = "Qwen 3 32B", id = "qwen/qwen3-32b", family = "Qwen"}
+            {name = "Llama 3.3 70B Free", id = "meta-llama/llama-3.3-70b-instruct:free", family = "Meta"},
+            {name = "DeepSeek V3 Free", id = "deepseek/deepseek-chat-v3-0324:free", family = "DeepSeek"},
+            {name = "Qwen 3 32B Free", id = "qwen/qwen3-32b:free", family = "Qwen"},
+            {name = "Gemma 3 27B Free", id = "google/gemma-3-27b-it:free", family = "Google"},
+            {name = "Mistral Small Free", id = "mistralai/mistral-small-3.1-24b-instruct:free", family = "Mistral"},
+            {name = "GPT-OSS 20B Free", id = "openai/gpt-oss-20b:free", family = "OpenAI"}
         }
     },
     {
-        id = "together",
-        name = "Together AI",
-        url = "https://api.together.xyz/v1/chat/completions",
-        keyName = "Together AI API key",
+        id = "cerebras",
+        name = "Cerebras (Free tier)",
+        url = "https://api.cerebras.ai/v1/chat/completions",
+        modelsUrl = "https://api.cerebras.ai/v1/models",
+        keyUrl = "https://cloud.cerebras.ai",
+        keyName = "Cerebras API key",
+        freeOnly = true,
         models = {
-            {name = "Llama 3.3 70B", id = "meta-llama/Llama-3.3-70B-Instruct-Turbo", family = "Meta"},
-            {name = "Qwen 2.5 72B", id = "Qwen/Qwen2.5-72B-Instruct-Turbo", family = "Qwen"},
-            {name = "DeepSeek V3", id = "deepseek-ai/DeepSeek-V3", family = "DeepSeek"},
-            {name = "Mistral Small", id = "mistralai/Mistral-Small-24B-Instruct-2501", family = "Mistral"}
+            {name = "Llama 3.3 70B", id = "llama-3.3-70b", family = "Meta"},
+            {name = "Llama 3.1 8B", id = "llama3.1-8b", family = "Meta"},
+            {name = "Qwen 3 32B", id = "qwen-3-32b", family = "Qwen"},
+            {name = "GPT-OSS 120B", id = "gpt-oss-120b", family = "OpenAI"}
         }
     },
     {
-        id = "deepinfra",
-        name = "DeepInfra",
-        url = "https://api.deepinfra.com/v1/openai/chat/completions",
-        keyName = "DeepInfra API key",
+        id = "google",
+        name = "Google AI Studio (Free tier)",
+        url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        modelsUrl = "https://generativelanguage.googleapis.com/v1beta/openai/models",
+        keyUrl = "https://aistudio.google.com/apikey",
+        keyName = "Google AI Studio API key",
+        freeOnly = true,
+        models = {
+            {name = "Gemini 2.0 Flash", id = "gemini-2.0-flash", family = "Google"},
+            {name = "Gemini 2.0 Flash Lite", id = "gemini-2.0-flash-lite", family = "Google"},
+            {name = "Gemini 1.5 Flash", id = "gemini-1.5-flash", family = "Google"},
+            {name = "Gemini 1.5 Flash 8B", id = "gemini-1.5-flash-8b", family = "Google"}
+        }
+    },
+    {
+        id = "huggingface",
+        name = "HuggingFace Router (Free tier)",
+        url = "https://router.huggingface.co/v1/chat/completions",
+        modelsUrl = "https://router.huggingface.co/v1/models",
+        keyUrl = "https://huggingface.co/settings/tokens",
+        keyName = "HuggingFace token",
+        freeOnly = true,
         models = {
             {name = "Llama 3.3 70B", id = "meta-llama/Llama-3.3-70B-Instruct", family = "Meta"},
             {name = "Qwen 2.5 72B", id = "Qwen/Qwen2.5-72B-Instruct", family = "Qwen"},
-            {name = "DeepSeek V3", id = "deepseek-ai/DeepSeek-V3", family = "DeepSeek"},
             {name = "Mistral Small", id = "mistralai/Mistral-Small-24B-Instruct-2501", family = "Mistral"}
         }
     },
     {
-        id = "mistral",
-        name = "Mistral AI",
-        url = "https://api.mistral.ai/v1/chat/completions",
-        keyName = "Mistral API key",
+        id = "github",
+        name = "GitHub Models (Free tier)",
+        url = "https://models.github.ai/inference/chat/completions",
+        modelsUrl = "https://models.github.ai/inference/models",
+        keyUrl = "https://github.com/settings/tokens",
+        keyName = "GitHub token",
+        freeOnly = true,
         models = {
-            {name = "Mistral Large", id = "mistral-large-latest", family = "Mistral"},
-            {name = "Mistral Small", id = "mistral-small-latest", family = "Mistral"},
-            {name = "Mistral Nemo", id = "open-mistral-nemo", family = "Mistral"}
-        }
-    },
-    {
-        id = "custom",
-        name = "Custom OpenAI-compatible",
-        url = "https://your-provider.example.com/v1/chat/completions",
-        keyName = "Custom provider API key",
-        models = {
-            {name = "Custom model", id = "your-model-id", family = "Custom"}
+            {name = "GPT-4.1 Mini", id = "openai/gpt-4.1-mini", family = "OpenAI"},
+            {name = "Llama 3.3 70B", id = "meta/llama-3.3-70b-instruct", family = "Meta"},
+            {name = "Mistral Small", id = "mistralai/mistral-small-2503", family = "Mistral"},
+            {name = "DeepSeek V3", id = "deepseek/deepseek-v3", family = "DeepSeek"}
         }
     }
 }
@@ -551,13 +576,98 @@ local function copyProviderLink(provider)
     local copied = false
     if type(setclipboard) == "function" then
         local ok = pcall(function()
-            setclipboard(provider.url)
+            setclipboard(provider.keyUrl)
         end)
         copied = ok
-    elseif type(writefile) == "function" then
-        copied = false
     end
     return copied
+end
+
+local function isFreeModel(provider, item, id)
+    if provider.id == "openrouter" then
+        if type(id) == "string" and id:find(":free", 1, true) then
+            return true
+        end
+        if type(item) == "table" and type(item.pricing) == "table" then
+            local prompt = item.pricing.prompt
+            local completion = item.pricing.completion
+            if prompt == "0" and completion == "0" then
+                return true
+            end
+        end
+        return false
+    end
+
+    return true
+end
+
+local function fetchProviderModels(provider)
+    if type(httpRequest) ~= "function" then
+        return nil, "HTTP support unavailable."
+    end
+
+    local key = keyBox.Text:gsub("%s", "")
+    if key == "" then
+        return nil, "Enter your " .. provider.keyName .. " first."
+    end
+
+    local ok, response = pcall(function()
+        return httpRequest({
+            Url = provider.modelsUrl,
+            Method = "GET",
+            Headers = {
+                ["Authorization"] = "Bearer " .. key,
+                ["Accept"] = "application/json"
+            }
+        })
+    end)
+
+    if not ok or type(response) ~= "table" then
+        return nil, "Could not fetch models."
+    end
+
+    local decoded, data = pcall(function()
+        return HttpService:JSONDecode(response.Body or "")
+    end)
+
+    local status = tonumber(response.StatusCode or response.Status) or 0
+    if not decoded or type(data) ~= "table" or status < 200 or status >= 300 then
+        local message = "Models HTTP " .. tostring(status)
+        if decoded and type(data) == "table" and type(data.error) == "table"
+            and data.error.message then
+            message = tostring(data.error.message)
+        end
+        return nil, message
+    end
+
+    local items = data.data
+    if type(items) ~= "table" then
+        return nil, "Provider did not return a model list."
+    end
+
+    local models = {}
+    for _, item in ipairs(items) do
+        local id = type(item) == "table" and item.id or nil
+        if type(id) == "string" and id ~= ""
+            and (not FREE_ONLY or isFreeModel(provider, item, id)) then
+            local family = id:match("^([^/]+)") or "Models"
+            models[#models + 1] = {
+                name = id,
+                id = id,
+                family = family
+            }
+        end
+    end
+
+    if #models == 0 then
+        return nil, "No free models were returned for this provider."
+    end
+
+    table.sort(models, function(a, b)
+        return a.id:lower() < b.id:lower()
+    end)
+
+    return models
 end
 
 local function refreshProviderMenu()
@@ -569,7 +679,7 @@ local function refreshProviderMenu()
 
     for providerIndex, provider in ipairs(PROVIDERS) do
         local option = button(
-            provider.name .. " - " .. provider.url,
+            provider.name .. " - " .. provider.keyUrl,
             5, y, 604,
             providerIndex == selectedProvider and GREEN or PANEL,
             providerMenu
@@ -586,7 +696,7 @@ local function refreshProviderMenu()
 
             providerMenu.Visible = false
             providerButton.Text = provider.name
-            modelButton.Text = "MODEL: " .. provider.models[1].name
+            modelButton.Text = "MODEL: Loading..."
 
             history = {}
             playerMemory = {}
@@ -596,20 +706,35 @@ local function refreshProviderMenu()
             local copied = copyProviderLink(provider)
 
             addMessage("PROVIDER", "Selected " .. provider.name, BLUE)
-            addMessage("PROVIDER", "Endpoint: " .. provider.url, BLUE)
+            addMessage("PROVIDER", "API key page: " .. provider.keyUrl, BLUE)
 
             if copied then
-                addMessage("PROVIDER", "Provider link copied to clipboard.", GREEN)
+                addMessage("PROVIDER", "API key page link copied to clipboard.", GREEN)
             else
                 addMessage("PROVIDER", "Clipboard copying is not supported by this executor.", ORANGE)
             end
 
-            addMessage("PROVIDER", "Enter your " .. provider.keyName .. ", then click SAVE.", ORANGE)
-            addMessage("PROVIDER", "Available models:", BLUE)
+            addMessage("PROVIDER", "Paste your " .. provider.keyName .. ", then click PROVIDERS again.", ORANGE)
+            addMessage("PROVIDER", "Fetching free models...", BLUE)
 
-            for _, model in ipairs(provider.models) do
-                addMessage("MODEL", model.name .. " - " .. model.id, WHITE)
+            local models, modelsError = fetchProviderModels(provider)
+
+            if type(models) == "table" and #models > 0 then
+                provider.models = models
+                addMessage("PROVIDER", "Found " .. #models .. " free models for " .. provider.name .. ".", GREEN)
+
+                for _, model in ipairs(models) do
+                    addMessage("MODEL", model.id, WHITE)
+                end
+
+                modelButton.Text = "MODEL: " .. models[1].name .. "  v"
+            else
+                addMessage("ERROR", modelsError or "Could not load free models.", RED)
+                addMessage("PROVIDER", "Using the built-in free-model fallback list instead.", ORANGE)
+                modelButton.Text = "MODEL: " .. provider.models[1].name .. "  v"
             end
+
+            rebuildModelMenu()
         end)
 
         y = y + 36
@@ -2731,8 +2856,10 @@ end)
 --==================================================
 -- STARTUP
 --==================================================
-addMessage("SYSTEM", "PRIVATE AI v18.9 loaded - 6-provider edition.", GREEN)
-addMessage("SYSTEM", "Click PROVIDERS to view providers. Selecting one copies its API link.", BLUE)
+addMessage("SYSTEM", "PRIVATE AI v20.1 loaded - FREE MODELS ONLY.", GREEN)
+addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cerebras, Google AI Studio, HuggingFace, GitHub Models.", BLUE)
+addMessage("SYSTEM", "Click PROVIDERS: it copies the API-key signup page, not your API key.", BLUE)
+addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
     "/graball grabs the game + every player and stores it PERMANENTLY "
         .. "(survives MEM and re-execute). /cleargraball wipes it.", BLUE)
