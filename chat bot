@@ -94,6 +94,45 @@ local PROVIDERS = {
         }
     },
     {
+        id = "aihorde",
+        name = "AI Horde (All models free)",
+        url = "https://oai.aihorde.net/v1/chat/completions",
+        modelsUrl = "https://oai.aihorde.net/v1/models",
+        keyUrl = "https://aihorde.net/register",
+        keyName = "AI Horde API key",
+        freeOnly = true,
+        models = {
+            {name = "Qwen3 0.6B", id = "koboldcpp/Qwen3-0.6B", family = "koboldcpp"},
+            {name = "Cydonia 24B v4zg", id = "koboldcpp/Cydonia-24B-v4zg-Q4_K_M", family = "koboldcpp"},
+            {name = "Behemoth 128B v3", id = "aphrodite/TheDrummer/Behemoth-128B-v3", family = "aphrodite"},
+            {name = "Gemma 4 Dark Orthia 31B", id = "Nimbz/Gemma-4-Dark-Orthia-31B", family = "Nimbz"},
+            {name = "Wicked Tutu 31B Final", id = "ReadyArt/Wicked-Tutu-31B-Final", family = "ReadyArt"},
+            {name = "L3 8B Stheno v3.2 Q4_K_S", id = "koboldcpp/L3-8B-Stheno-v3.2-Q4_K_S", family = "koboldcpp"},
+            {name = "Gemma 4 E4B Uncensored HauhauCS Aggressive", id = "koboldcpp/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-IQ3_M", family = "koboldcpp"},
+            {name = "Gemma 4 E2B Queen debug", id = "koboldcpp/debug-gemma-4-E2B-Queen-it-qat-q4_0-unquantized.i1-Q4_K_M", family = "koboldcpp"},
+            {name = "L3 8B Stheno v3.2", id = "koboldcpp/L3-8B-Stheno-v3.2", family = "koboldcpp"},
+            {name = "Qwen3 14B", id = "koboldcpp/Qwen3-14B", family = "koboldcpp"},
+            {name = "Sao10K L3 8B Stheno v3.2", id = "koboldcpp/Sao10K/L3-8B-Stheno-v3.2", family = "koboldcpp"},
+            {name = "Gemma 4 E4B IT", id = "koboldcpp/gemma-4-E4B-it", family = "koboldcpp"},
+            {name = "Qwen3 1.7B", id = "koboldcpp/Qwen3-1.7B", family = "koboldcpp"},
+            {name = "Gemma 3 4B IT Q4_K_M", id = "koboldcpp/gemma-3-4b-it-Q4_K_M", family = "koboldcpp"},
+            {name = "Qwen3.5 4B", id = "koboldcpp/Qwen3.5-4B", family = "koboldcpp"},
+            {name = "MeroMero 26B A4B Heretic", id = "koboldcpp/G4-MeroMero-26B-A4B-it-uncensored-heretic", family = "koboldcpp"}
+        }
+    },
+    {
+        id = "synap",
+        name = "Synap (Free tier)",
+        url = "https://synap402.com/v1/chat/completions",
+        modelsUrl = "https://synap402.com/v1/models",
+        keyUrl = "https://synap402.com/",
+        keyName = "Synap API key",
+        freeOnly = true,
+        models = {
+            {name = "Qwen3 Coder 30B", id = "qwen3-coder-30b", family = "Qwen"}
+        }
+    },
+    {
         id = "google",
         name = "Google AI Studio (Free tier)",
         url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
@@ -104,20 +143,6 @@ local PROVIDERS = {
         models = {
             {name = "Gemini 2.0 Flash", id = "gemini-2.0-flash", family = "Google"},
             {name = "Gemini 2.0 Flash Lite", id = "gemini-2.0-flash-lite", family = "Google"}
-        }
-    },
-    {
-        id = "huggingface",
-        name = "HuggingFace Router (Free tier)",
-        url = "https://router.huggingface.co/v1/chat/completions",
-        modelsUrl = "https://router.huggingface.co/v1/models",
-        keyUrl = "https://huggingface.co/settings/tokens",
-        keyName = "HuggingFace token",
-        freeOnly = true,
-        models = {
-            {name = "Llama 3.3 70B", id = "meta-llama/Llama-3.3-70B-Instruct", family = "Meta"},
-            {name = "Qwen 2.5 72B", id = "Qwen/Qwen2.5-72B-Instruct", family = "Qwen"},
-            {name = "Mistral Small", id = "mistralai/Mistral-Small-24B-Instruct-2501", family = "Mistral"}
         }
     }
 }
@@ -143,6 +168,18 @@ local saved = {}
 if type(readfile) == "function" then
     local ok, data = pcall(function() return HttpService:JSONDecode(readfile(SAVE_FILE)) end)
     if ok and type(data) == "table" then saved = data end
+end
+
+local apiKeys = type(saved.apiKeys) == "table" and saved.apiKeys or {}
+
+local function savedKeyFor(providerId)
+    if type(apiKeys[providerId]) == "string" then
+        return apiKeys[providerId]
+    end
+    if type(saved.apiKey) == "string" then
+        return saved.apiKey
+    end
+    return ""
 end
 
 local savedProviderId = saved.selectedProviderId
@@ -283,7 +320,7 @@ local circleButton = button("CIRCLE", 370, 6, 62, BLUE, header)
 local nocdButton = button("NOCD", 438, 6, 58, GRAY, header)
 local clearButton = button("CLEAR", 502, 6, 62, RED, header)
 local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
-local keyBox = textBox(54, "API key", type(saved.apiKey) == "string" and saved.apiKey or "")
+local keyBox = textBox(54, "API key", savedKeyFor(PROVIDERS[selectedProvider].id))
 local personalityBox = textBox(98, "Personality", saved.personality or "Friendly")
 local modelButton = button("MODEL: " .. PROVIDERS[selectedProvider].models[selectedModel].name .. "  v",
     12, 142, 626, Color3.fromRGB(105, 85, 175))
@@ -375,10 +412,11 @@ local messageOrder = 0
 local function addLogLine(text, color)
     if not session.alive then return end
     messageOrder = messageOrder + 1
-    local label = create("TextLabel", {
+    local label = create("TextButton", {
         Size = UDim2.new(1, -12, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundTransparency = 1,
+        AutoButtonColor = false,
         TextWrapped = true,
         RichText = false,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -389,6 +427,18 @@ local function addLogLine(text, color)
         TextSize = 13,
         LayoutOrder = messageOrder
     }, chat)
+    local copyValue = tostring(text)
+    connect(label.MouseButton1Click, function()
+        local copied = false
+        if type(setclipboard) == "function" then
+            copied = pcall(function() setclipboard(copyValue) end)
+        end
+        label.BackgroundColor3 = copied and GREEN or RED
+        label.BackgroundTransparency = 0.7
+        task.delay(0.25, function()
+            if label.Parent then label.BackgroundTransparency = 1 end
+        end)
+    end)
     task.defer(function()
         if session.alive then
             chat.CanvasPosition = Vector2.new(0,
@@ -572,10 +622,26 @@ local FREE_MODEL_IDS = {
         ["gemini-2.0-flash"] = true,
         ["gemini-2.0-flash-lite"] = true
     },
-    huggingface = {
-        ["meta-llama/Llama-3.3-70B-Instruct"] = true,
-        ["Qwen/Qwen2.5-72B-Instruct"] = true,
-        ["mistralai/Mistral-Small-24B-Instruct-2501"] = true
+    synap = {
+        ["qwen3-coder-30b"] = true
+    },
+    aihorde = {
+        ["koboldcpp/Qwen3-0.6B"] = true,
+        ["koboldcpp/Cydonia-24B-v4zg-Q4_K_M"] = true,
+        ["aphrodite/TheDrummer/Behemoth-128B-v3"] = true,
+        ["Nimbz/Gemma-4-Dark-Orthia-31B"] = true,
+        ["ReadyArt/Wicked-Tutu-31B-Final"] = true,
+        ["koboldcpp/L3-8B-Stheno-v3.2-Q4_K_S"] = true,
+        ["koboldcpp/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-IQ3_M"] = true,
+        ["koboldcpp/debug-gemma-4-E2B-Queen-it-qat-q4_0-unquantized.i1-Q4_K_M"] = true,
+        ["koboldcpp/L3-8B-Stheno-v3.2"] = true,
+        ["koboldcpp/Qwen3-14B"] = true,
+        ["koboldcpp/Sao10K/L3-8B-Stheno-v3.2"] = true,
+        ["koboldcpp/gemma-4-E4B-it"] = true,
+        ["koboldcpp/Qwen3-1.7B"] = true,
+        ["koboldcpp/gemma-3-4b-it-Q4_K_M"] = true,
+        ["koboldcpp/Qwen3.5-4B"] = true,
+        ["koboldcpp/G4-MeroMero-26B-A4B-it-uncensored-heretic"] = true
     }
 }
 
@@ -615,6 +681,19 @@ local function isFreeModel(provider, item, id)
     return false
 end
 
+-- Turns a missing/failed HTTP response into a message the user can act on.
+-- A status of 0 means no response arrived at all (DNS, refused, blocked, TLS).
+local function httpFailureHint(provider, status)
+    status = tonumber(status) or 0
+
+    if status == 0 then
+        return provider.name .. " sent no response (HTTP 0). "
+            .. "Check your internet connection; the provider may be blocked or down."
+    end
+
+    return provider.name .. " HTTP " .. status
+end
+
 local function fetchProviderModels(provider)
     if provider.id == "groq" then
         return provider.models
@@ -625,7 +704,7 @@ local function fetchProviderModels(provider)
     end
 
     local key = keyBox.Text:gsub("%s", "")
-    if key == "" then
+    if provider.requiresKey ~= false and key == "" then
         return nil, "Enter your " .. provider.keyName .. " first."
     end
 
@@ -641,7 +720,7 @@ local function fetchProviderModels(provider)
     end)
 
     if not ok or type(response) ~= "table" then
-        return nil, "Could not fetch models."
+        return nil, httpFailureHint(provider, 0)
     end
 
     local decoded, data = pcall(function()
@@ -650,7 +729,7 @@ local function fetchProviderModels(provider)
 
     local status = tonumber(response.StatusCode or response.Status) or 0
     if not decoded or type(data) ~= "table" or status < 200 or status >= 300 then
-        local message = "Models HTTP " .. tostring(status)
+        local message = httpFailureHint(provider, status)
         if decoded and type(data) == "table" and type(data.error) == "table"
             and data.error.message then
             message = tostring(data.error.message)
@@ -709,8 +788,10 @@ local function refreshProviderMenu()
         option.MouseButton1Click:Connect(function()
             if not session.alive then return end
 
+            apiKeys[PROVIDERS[selectedProvider].id] = keyBox.Text:gsub("%s", "")
             selectedProvider = providerIndex
             selectedModel = 1
+            keyBox.Text = apiKeys[provider.id] or ""
 
             providerMenu.Visible = false
             providerButton.Text = provider.name
@@ -732,7 +813,11 @@ local function refreshProviderMenu()
                 addMessage("PROVIDER", "Clipboard copying is not supported by this executor.", ORANGE)
             end
 
-            addMessage("PROVIDER", "Paste your " .. provider.keyName .. ", then click PROVIDERS again.", ORANGE)
+            if provider.requiresKey == false then
+                addMessage("PROVIDER", "No API key needed for " .. provider.name .. ".", GREEN)
+            else
+                addMessage("PROVIDER", "Paste your " .. provider.keyName .. ", then click PROVIDERS again.", ORANGE)
+            end
             addMessage("PROVIDER", "Fetching free models...", BLUE)
 
             local models, modelsError = fetchProviderModels(provider)
@@ -997,8 +1082,13 @@ local function callProvider(messages, maxTokens)
     local model = provider.models[selectedModel]
 
     local key = keyBox.Text:gsub("%s", "")
-    if key == "" then
+    if provider.requiresKey ~= false and key == "" then
         return nil, "Enter your " .. provider.keyName .. "."
+    end
+
+    local headers = { ["Content-Type"] = "application/json" }
+    if key ~= "" then
+        headers["Authorization"] = "Bearer " .. key
     end
 
     local body = HttpService:JSONEncode({
@@ -1008,17 +1098,14 @@ local function callProvider(messages, maxTokens)
         max_tokens = maxTokens or 900
     })
 
-    local lastError = provider.name .. " HTTP request failed."
+    local lastError = httpFailureHint(provider, 0)
 
     for attempt = 1, 2 do
         local ok, response = pcall(function()
             return httpRequest({
                 Url = provider.url,
                 Method = "POST",
-                Headers = {
-                    ["Content-Type"] = "application/json",
-                    ["Authorization"] = "Bearer " .. key
-                },
+                Headers = headers,
                 Body = body
             })
         end)
@@ -1048,14 +1135,14 @@ local function callProvider(messages, maxTokens)
                 and data.error.message then
                 lastError = model.id .. ": " .. tostring(data.error.message)
             else
-                lastError = model.id .. ": " .. provider.name .. " HTTP " .. tostring(status)
+                lastError = model.id .. ": " .. httpFailureHint(provider, status)
             end
 
             if status ~= 429 and status < 500 then
                 return nil, lastError
             end
         else
-            lastError = provider.name .. " HTTP request failed."
+            lastError = httpFailureHint(provider, 0)
         end
 
         if attempt < 2 and session.alive then
@@ -1535,7 +1622,7 @@ end
 local function buildChatSnapshot()
     local messages = {}
     for _, child in ipairs(chat:GetChildren()) do
-        if child:IsA("TextLabel") then
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
             local color = child.TextColor3
             table.insert(messages, {
                 text = child.Text,
@@ -1561,10 +1648,12 @@ end
 
 local function persistState()
     if type(writefile) ~= "function" then return false, "writefile unavailable." end
+    apiKeys[PROVIDERS[selectedProvider].id] = keyBox.Text:gsub("%s", "")
     local ok, result = pcall(function()
         writefile(SAVE_FILE, HttpService:JSONEncode({
             version = 18,
             apiKey = keyBox.Text:gsub("%s", ""),
+            apiKeys = apiKeys,
             personality = personalityBox.Text,
             selectedProvider = selectedProvider,
             selectedProviderId = PROVIDERS[selectedProvider].id,
@@ -2749,7 +2838,7 @@ end)
 
 connect(clearButton.MouseButton1Click, function()
     for _, child in ipairs(chat:GetChildren()) do
-        if child:IsA("TextLabel") then child:Destroy() end
+        if child:IsA("TextLabel") or child:IsA("TextButton") then child:Destroy() end
     end
     history = {}
     manualVersion = manualVersion + 1
@@ -2777,7 +2866,7 @@ end)
 connect(saveButton.MouseButton1Click, function()
     local ok, err = persistState()
     addMessage(ok and "SYSTEM" or "ERROR",
-        ok and "Saved API key, model, settings, memories, game snapshot "
+        ok and "Saved all provider API keys, model, settings, memories, game snapshot "
             .. "and permanent grabs."
             or tostring(err), ok and GREEN or RED)
     if ok then
@@ -2875,7 +2964,7 @@ end)
 -- STARTUP
 --==================================================
 addMessage("SYSTEM", "PRIVATE AI v20.1 loaded - FREE MODELS ONLY.", GREEN)
-addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, Google AI Studio, HuggingFace.", BLUE)
+addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, AI Horde, Synap, Google AI Studio.", BLUE)
 addMessage("SYSTEM", "Click PROVIDERS: it copies the API-key signup page, not your API key.", BLUE)
 addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
@@ -2897,7 +2986,13 @@ addMessage("SYSTEM",
     "F1 hides the GUI. Drag the slider to change radius. "
     .. "NOCD disables cooldowns and send gaps.", ORANGE)
 addMessage("SYSTEM",
-    keyBox.Text ~= "" and "Saved API key restored."
+    "Click any chat message to copy its text to your clipboard "
+    .. "(flashes green on success, red if clipboard is unsupported).", ORANGE)
+addMessage("SYSTEM",
+    keyBox.Text ~= "" and "Saved API key restored for " .. PROVIDERS[selectedProvider].name .. "."
         or "Enter your API key, then click SAVE.", BLUE)
+addMessage("SYSTEM",
+    "Each provider keeps its own API key: paste one, click SAVE, "
+        .. "and switch providers freely. Keys are remembered per provider.", ORANGE)
 
 print("PRIVATE GROQ AI v18.6 loaded: GRABALL + GRABGAME + RATEGAME + RATEAVATAR + QUIZGAME")
