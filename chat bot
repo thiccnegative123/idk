@@ -56,13 +56,10 @@ local PROVIDERS = {
         keyName = "Groq API key",
         freeOnly = true,
         models = {
-            {name = "Llama 3.3 70B", id = "llama-3.3-70b-versatile", family = "Meta"},
-            {name = "Llama 3.1 8B", id = "llama-3.1-8b-instant", family = "Meta"},
             {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "OpenAI"},
             {name = "GPT-OSS 20B", id = "openai/gpt-oss-20b", family = "OpenAI"},
-            {name = "Qwen 3 32B", id = "qwen/qwen3-32b", family = "Qwen"},
-            {name = "Kimi K2", id = "moonshotai/kimi-k2-instruct", family = "Moonshot"},
-            {name = "Gemma 3 27B", id = "gemma2-9b-it", family = "Google"}
+            {name = "Qwen 3.8 27B", id = "qwen/qwen3.8-27b", family = "Qwen"},
+            {name = "ALLaM 2 7B", id = "allam-2-7b", family = "ALLaM"}
         }
     },
     {
@@ -83,18 +80,17 @@ local PROVIDERS = {
         }
     },
     {
-        id = "cerebras",
-        name = "Cerebras (Free tier)",
-        url = "https://api.cerebras.ai/v1/chat/completions",
-        modelsUrl = "https://api.cerebras.ai/v1/models",
-        keyUrl = "https://cloud.cerebras.ai",
-        keyName = "Cerebras API key",
+        id = "cohere",
+        name = "Cohere (Free trial key)",
+        url = "https://api.cohere.ai/compatibility/v1/chat/completions",
+        modelsUrl = "https://api.cohere.ai/compatibility/v1/models",
+        keyUrl = "https://dashboard.cohere.com/api-keys",
+        keyName = "Cohere API key",
         freeOnly = true,
         models = {
-            {name = "Llama 3.3 70B", id = "llama-3.3-70b", family = "Meta"},
-            {name = "Llama 3.1 8B", id = "llama3.1-8b", family = "Meta"},
-            {name = "Qwen 3 32B", id = "qwen-3-32b", family = "Qwen"},
-            {name = "GPT-OSS 120B", id = "gpt-oss-120b", family = "OpenAI"}
+            {name = "Command A", id = "command-a-03-2025", family = "Cohere"},
+            {name = "Command R+", id = "command-r-plus-08-2024", family = "Cohere"},
+            {name = "Command R7B", id = "command-r7b-12-2024", family = "Cohere"}
         }
     },
     {
@@ -107,9 +103,7 @@ local PROVIDERS = {
         freeOnly = true,
         models = {
             {name = "Gemini 2.0 Flash", id = "gemini-2.0-flash", family = "Google"},
-            {name = "Gemini 2.0 Flash Lite", id = "gemini-2.0-flash-lite", family = "Google"},
-            {name = "Gemini 1.5 Flash", id = "gemini-1.5-flash", family = "Google"},
-            {name = "Gemini 1.5 Flash 8B", id = "gemini-1.5-flash-8b", family = "Google"}
+            {name = "Gemini 2.0 Flash Lite", id = "gemini-2.0-flash-lite", family = "Google"}
         }
     },
     {
@@ -124,21 +118,6 @@ local PROVIDERS = {
             {name = "Llama 3.3 70B", id = "meta-llama/Llama-3.3-70B-Instruct", family = "Meta"},
             {name = "Qwen 2.5 72B", id = "Qwen/Qwen2.5-72B-Instruct", family = "Qwen"},
             {name = "Mistral Small", id = "mistralai/Mistral-Small-24B-Instruct-2501", family = "Mistral"}
-        }
-    },
-    {
-        id = "github",
-        name = "GitHub Models (Free tier)",
-        url = "https://models.github.ai/inference/chat/completions",
-        modelsUrl = "https://models.github.ai/inference/models",
-        keyUrl = "https://github.com/settings/tokens",
-        keyName = "GitHub token",
-        freeOnly = true,
-        models = {
-            {name = "GPT-4.1 Mini", id = "openai/gpt-4.1-mini", family = "OpenAI"},
-            {name = "Llama 3.3 70B", id = "meta/llama-3.3-70b-instruct", family = "Meta"},
-            {name = "Mistral Small", id = "mistralai/mistral-small-2503", family = "Mistral"},
-            {name = "DeepSeek V3", id = "deepseek/deepseek-v3", family = "DeepSeek"}
         }
     }
 }
@@ -304,7 +283,7 @@ local circleButton = button("CIRCLE", 370, 6, 62, BLUE, header)
 local nocdButton = button("NOCD", 438, 6, 58, GRAY, header)
 local clearButton = button("CLEAR", 502, 6, 62, RED, header)
 local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
-local keyBox = textBox(54, "Groq API key", type(saved.apiKey) == "string" and saved.apiKey or "")
+local keyBox = textBox(54, "API key", type(saved.apiKey) == "string" and saved.apiKey or "")
 local personalityBox = textBox(98, "Personality", saved.personality or "Friendly")
 local modelButton = button("MODEL: " .. PROVIDERS[selectedProvider].models[selectedModel].name .. "  v",
     12, 142, 626, Color3.fromRGB(105, 85, 175))
@@ -583,25 +562,64 @@ local function copyProviderLink(provider)
     return copied
 end
 
+local FREE_MODEL_IDS = {
+    cohere = {
+        ["command-a-03-2025"] = true,
+        ["command-r-plus-08-2024"] = true,
+        ["command-r7b-12-2024"] = true
+    },
+    google = {
+        ["gemini-2.0-flash"] = true,
+        ["gemini-2.0-flash-lite"] = true
+    },
+    huggingface = {
+        ["meta-llama/Llama-3.3-70B-Instruct"] = true,
+        ["Qwen/Qwen2.5-72B-Instruct"] = true,
+        ["mistralai/Mistral-Small-24B-Instruct-2501"] = true
+    }
+}
+
 local function isFreeModel(provider, item, id)
     if provider.id == "openrouter" then
         if type(id) == "string" and id:find(":free", 1, true) then
             return true
         end
+
         if type(item) == "table" and type(item.pricing) == "table" then
             local prompt = item.pricing.prompt
             local completion = item.pricing.completion
+
             if prompt == "0" and completion == "0" then
                 return true
             end
         end
+
         return false
     end
 
-    return true
+    local allowed = FREE_MODEL_IDS[provider.id]
+
+    if allowed then
+        return type(id) == "string" and allowed[id] == true
+    end
+
+    if type(item) == "table" and type(item.pricing) == "table" then
+        local prompt = item.pricing.prompt
+        local completion = item.pricing.completion
+
+        if prompt ~= nil and completion ~= nil then
+            return tonumber(prompt) == 0 and tonumber(completion) == 0
+        end
+    end
+
+    return false
 end
 
 local function fetchProviderModels(provider)
+    if provider.id == "groq" then
+        return provider.models
+    end
+
     if type(httpRequest) ~= "function" then
         return nil, "HTTP support unavailable."
     end
@@ -2857,7 +2875,7 @@ end)
 -- STARTUP
 --==================================================
 addMessage("SYSTEM", "PRIVATE AI v20.1 loaded - FREE MODELS ONLY.", GREEN)
-addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cerebras, Google AI Studio, HuggingFace, GitHub Models.", BLUE)
+addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, Google AI Studio, HuggingFace.", BLUE)
 addMessage("SYSTEM", "Click PROVIDERS: it copies the API-key signup page, not your API key.", BLUE)
 addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
@@ -2877,9 +2895,9 @@ addMessage("SYSTEM",
         .. "/silentcmd /silentcmds show it privately here.", BLUE)
 addMessage("SYSTEM",
     "F1 hides the GUI. Drag the slider to change radius. "
-        .. "NOCD disables cooldowns and send gaps.", ORANGE)
+    .. "NOCD disables cooldowns and send gaps.", ORANGE)
 addMessage("SYSTEM",
     keyBox.Text ~= "" and "Saved API key restored."
-        or "Enter your Groq API key, then click SAVE.", BLUE)
+        or "Enter your API key, then click SAVE.", BLUE)
 
-print("PRIVATE GROQ AI v18.6 loaded: GRABGALL + GRABGAME + RATEGAME + RATEAVATAR + QUIZGAME")
+print("PRIVATE GROQ AI v18.6 loaded: GRABALL + GRABGAME + RATEGAME + RATEAVATAR + QUIZGAME")
