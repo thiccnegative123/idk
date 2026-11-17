@@ -286,6 +286,10 @@ local circleVisible = saved.circleVisible ~= false
 local restrictToAllowed = saved.restrictToAllowed == true
 local noCooldown = saved.noCooldown == true
 local allowCommands = saved.allowCommands == true
+-- Text-to-speech: on/off plus the chosen Roblox artificial voice (see
+-- TTS_VOICES below). Both are remembered in the save file.
+local ttsEnabled = saved.ttsEnabled ~= false
+local ttsVoiceIndex = math.clamp(math.floor(tonumber(saved.ttsVoiceIndex) or 2), 1, 31)
 local commandAccessVersion = 0
 local savedLoopGrabEnabled = saved.loopGrabEnabled == true
 local history = type(saved.history) == "table" and saved.history or {}
@@ -402,8 +406,13 @@ local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
 local keyBox = textBox(54, "API key", savedKeyFor(PROVIDERS[selectedProvider].id))
 local personalityBox = textBox(98, "Personality", saved.personality or "Friendly")
 local modelButton = button("MODEL: " .. PROVIDERS[selectedProvider].models[selectedModel].name .. "  v",
-    12, 142, 458, Color3.fromRGB(105, 85, 175))
-local tokensButton = button("TOKENS", 478, 142, 160, Color3.fromRGB(85, 105, 165))
+    12, 142, 320, Color3.fromRGB(105, 85, 175))
+modelButton.TextTruncate = Enum.TextTruncate.AtEnd
+local tokensButton = button("TOKENS", 336, 142, 84, Color3.fromRGB(85, 105, 165))
+local ttsButton = button("TTS: ON", 424, 142, 78, GREEN)
+local voiceButton = button("VOICE", 506, 142, 132, Color3.fromRGB(85, 105, 165))
+voiceButton.TextSize = 10
+voiceButton.TextTruncate = Enum.TextTruncate.AtEnd
 
 local modelMenu = create("ScrollingFrame", {
     Position = UDim2.fromOffset(12, 178),
@@ -417,6 +426,20 @@ local modelMenu = create("ScrollingFrame", {
     ScrollingDirection = Enum.ScrollingDirection.Y
 }, main)
 round(modelMenu)
+
+-- Voice picker, shown over the same area as the model/provider menus.
+local voiceMenu = create("ScrollingFrame", {
+    Position = UDim2.fromOffset(12, 178),
+    Size = UDim2.fromOffset(626, 300),
+    BackgroundColor3 = BG,
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 20,
+    ScrollBarThickness = 6,
+    CanvasSize = UDim2.new(),
+    ScrollingDirection = Enum.ScrollingDirection.Y
+}, main)
+round(voiceMenu)
 
 local radiusLabel = create("TextLabel", {
     Position = UDim2.fromOffset(12, 180),
@@ -532,6 +555,98 @@ local function addMessage(sender, text, color)
     return addLogLine(sender .. ": " .. tostring(text), color)
 end
 
+--==================================================
+-- TEXT-TO-SPEECH (Roblox AudioTextToSpeech)
+--==================================================
+-- Roblox ships a set of built-in artificial voices. VoiceId is a string and the
+-- names below are the official descriptions from Roblox's docs ("list of
+-- artificial voices").
+local TTS_VOICES = {
+    {id = "1", name = "British male"},
+    {id = "2", name = "British female"},
+    {id = "3", name = "US male #1"},
+    {id = "4", name = "US female #1"},
+    {id = "5", name = "US male #2"},
+    {id = "6", name = "US female #2"},
+    {id = "7", name = "Australian male"},
+    {id = "8", name = "Australian female"},
+    {id = "9", name = "Retro #1"},
+    {id = "10", name = "Retro #2"},
+    {id = "11", name = "Host"},
+    {id = "101", name = "Spanish male"},
+    {id = "102", name = "Spanish female"},
+    {id = "201", name = "German male"},
+    {id = "202", name = "German female"},
+    {id = "301", name = "Italian male"},
+    {id = "302", name = "Italian female"},
+    {id = "401", name = "French male"},
+    {id = "402", name = "French female"},
+    {id = "501", name = "Mandarin male"},
+    {id = "502", name = "Mandarin female"},
+    {id = "601", name = "Hindi male"},
+    {id = "602", name = "Hindi female"},
+    {id = "701", name = "Japanese male"},
+    {id = "702", name = "Japanese female"},
+    {id = "801", name = "Arabic male"},
+    {id = "802", name = "Arabic female"},
+    {id = "901", name = "Korean male"},
+    {id = "902", name = "Korean female"},
+    {id = "1001", name = "Portuguese male"},
+    {id = "1002", name = "Portuguese female"}
+}
+
+local ttsSpeaker, ttsOutput, ttsWire = nil, nil, nil
+local ttsUnavailable = false
+
+-- Builds the 2D speech chain once: AudioTextToSpeech -> Wire -> AudioDeviceOutput,
+-- all parented to SoundService (Roblox's own layout for non-directional speech).
+local function ensureTts()
+    if ttsSpeaker and ttsSpeaker.Parent then return true end
+    if ttsUnavailable then return false end
+    local ok = pcall(function()
+        local soundService = game:GetService("SoundService")
+        local output = Instance.new("AudioDeviceOutput")
+        output.Name = "PrivateGroqAI_TTSOutput"
+        output.Parent = soundService
+        local speaker = Instance.new("AudioTextToSpeech")
+        speaker.Name = "PrivateGroqAI_TTS"
+        speaker.Volume = 2
+        speaker.Parent = soundService
+        local wire = Instance.new("Wire")
+        wire.Name = "PrivateGroqAI_TTSWire"
+        wire.SourceInstance = speaker
+        wire.TargetInstance = output
+        wire.Parent = soundService
+        ttsOutput, ttsSpeaker, ttsWire = output, speaker, wire
+    end)
+    if not ok or not ttsSpeaker then
+        ttsUnavailable = true
+        return false
+    end
+    return true
+end
+
+-- Speaks a string with the selected voice. Roblox caps each request at 300
+-- characters, so longer text is clipped on a UTF-8 boundary. Safe to call when
+-- TTS is off or the executor/Roblox build does not support audio objects.
+local function ttsSpeak(text)
+    if not ttsEnabled or not session.alive then return end
+    text = trim(tostring(text or ""))
+    if text == "" then return end
+    if utf8.len(text) and utf8.len(text) > 300 then
+        local cut = utf8.offset(text, 301)
+        if cut then text = text:sub(1, cut - 1) end
+    end
+    if not ensureTts() then return end
+    local voice = TTS_VOICES[ttsVoiceIndex] or TTS_VOICES[2]
+    pcall(function()
+        ttsSpeaker.VoiceId = voice.id
+        ttsSpeaker.Text = text
+        ttsSpeaker.Volume = 2
+        ttsSpeaker:Play()
+    end)
+end
+
 if type(saved.chatMessages) == "table" then
     for _, item in ipairs(saved.chatMessages) do
         if type(item) == "table" and type(item.text) == "string" then
@@ -560,6 +675,11 @@ local function refreshButtons()
     nocdButton.BackgroundColor3 = noCooldown and RED or GRAY
     allowCmdButton.Text = allowCommands and "ALLOW CMD: ON" or "ALLOW CMD: OFF"
     allowCmdButton.BackgroundColor3 = allowCommands and GREEN or GRAY
+    ttsButton.Text = ttsEnabled and "TTS: ON" or "TTS: OFF"
+    ttsButton.BackgroundColor3 = ttsEnabled and GREEN or GRAY
+    voiceButton.Text = "VOICE: "
+        .. (TTS_VOICES[ttsVoiceIndex] and TTS_VOICES[ttsVoiceIndex].name or "?")
+    voiceButton.BackgroundColor3 = ttsEnabled and Color3.fromRGB(85, 105, 165) or GRAY
 end
 
 local function updateQuizButton()
@@ -665,7 +785,9 @@ end
 rebuildModelMenu()
 
 connect(modelButton.MouseButton1Click, function()
-    modelMenu.Visible = not modelMenu.Visible
+    local show = not modelMenu.Visible
+    voiceMenu.Visible = false
+    modelMenu.Visible = show
 end)
 
 local providerMenu = create("ScrollingFrame", {
@@ -1511,7 +1633,55 @@ end
 refreshProviderMenu()
 
 connect(providerButton.MouseButton1Click, function()
-    providerMenu.Visible = not providerMenu.Visible
+    local show = not providerMenu.Visible
+    modelMenu.Visible = false
+    voiceMenu.Visible = false
+    providerMenu.Visible = show
+end)
+
+-- Voice picker: one row per Roblox artificial voice; click a row to select it.
+-- The choice is used for every spoken reply and is remembered by SAVE.
+local voiceOptionConnections = {}
+
+local function rebuildVoiceMenu()
+    for _, connection in ipairs(voiceOptionConnections) do connection:Disconnect() end
+    voiceOptionConnections = {}
+
+    for _, child in ipairs(voiceMenu:GetChildren()) do
+        if child:IsA("GuiObject") then child:Destroy() end
+    end
+
+    local y = 5
+    for index, voice in ipairs(TTS_VOICES) do
+        local optionIndex, optionVoice = index, voice
+        local option = button(optionVoice.name .. "  (VoiceId " .. optionVoice.id .. ")",
+            5, y, 604, index == ttsVoiceIndex and GREEN or PANEL, voiceMenu)
+        option.ZIndex = 21
+        option.TextTruncate = Enum.TextTruncate.AtEnd
+
+        table.insert(voiceOptionConnections, option.MouseButton1Click:Connect(function()
+            if not session.alive then return end
+            voiceMenu.Visible = false
+            ttsVoiceIndex = optionIndex
+            refreshButtons()
+            addMessage("TTS", "Voice set to " .. optionVoice.name
+                .. " (VoiceId " .. optionVoice.id .. ").", BLUE)
+            ttsSpeak("This is the " .. optionVoice.name .. " voice.")
+        end))
+
+        y = y + 36
+    end
+
+    voiceMenu.CanvasSize = UDim2.fromOffset(0, y + 5)
+end
+
+rebuildVoiceMenu()
+
+connect(voiceButton.MouseButton1Click, function()
+    local show = not voiceMenu.Visible
+    modelMenu.Visible = false
+    providerMenu.Visible = false
+    voiceMenu.Visible = show
 end)
 
 local function resolvePlayer(query)
@@ -1729,6 +1899,9 @@ local function publish(text, prefix, validator)
     local sent, err = sendChat(text, prefix, validator)
     if sent then
         addMessage("BOT", text, PURPLE)
+        -- Read the reply aloud when TTS is on (covers chat replies, quizzes,
+        -- trivia and every /command answer).
+        ttsSpeak(text)
     elseif session.alive and err ~= "Reply canceled." then
         addMessage("ERROR", err, RED)
     end
@@ -2393,6 +2566,8 @@ local function persistState()
         restrictToAllowed = restrictToAllowed,
         noCooldown = noCooldown,
         allowCommands = allowCommands,
+        ttsEnabled = ttsEnabled,
+        ttsVoiceIndex = ttsVoiceIndex,
         loopGrabEnabled = loopGrabEnabled,
         history = history,
         playerMemory = stringKeys(playerMemory),
@@ -3357,6 +3532,8 @@ local function sendManual()
                 if answer then
                     appendTurn(history, text, answer)
                     addMessage("AI", answer, PURPLE)
+                    -- GUI-only replies are not published to chat, so speak them here.
+                    ttsSpeak(answer)
                 else
                     addMessage("ERROR", requestError, RED)
                 end
@@ -3482,6 +3659,22 @@ connect(autoButton.MouseButton1Click, function()
     autoSpeak = not autoSpeak
     invalidateReplies()
     refreshButtons()
+end)
+
+connect(ttsButton.MouseButton1Click, function()
+    ttsEnabled = not ttsEnabled
+    refreshButtons()
+    if ttsEnabled then
+        addMessage("TTS", "Text-to-speech ON. Voice: "
+            .. (TTS_VOICES[ttsVoiceIndex] and TTS_VOICES[ttsVoiceIndex].name or "?")
+            .. ". Click VOICE to pick another.", GREEN)
+        ttsSpeak("Text to speech is on. I will read out my replies with the "
+            .. (TTS_VOICES[ttsVoiceIndex] and TTS_VOICES[ttsVoiceIndex].name or "selected")
+            .. " voice.")
+    else
+        addMessage("TTS", "Text-to-speech OFF.", ORANGE)
+        if ttsSpeaker then pcall(function() ttsSpeaker:Stop() end) end
+    end
 end)
 
 connect(restrictButton.MouseButton1Click, function()
@@ -3775,6 +3968,10 @@ addMessage("SYSTEM",
 addMessage("SYSTEM",
     "Each provider keeps its own API key: paste one, click SAVE, "
         .. "and switch providers freely. Keys are remembered per provider.", ORANGE)
+addMessage("SYSTEM",
+    "TTS: ON/OFF toggles text-to-speech for every AI reply (chat and GUI). "
+        .. "VOICE opens the list of Roblox voices (British, US, Australian, "
+        .. "Spanish, German, French, Japanese and more). Both are saved by SAVE.", BLUE)
 
 -- Paint the bottom TOKENS line for the restored provider right away, then try
 -- to pull a live allowance (OpenRouter credits, AI Horde kudos) in the
