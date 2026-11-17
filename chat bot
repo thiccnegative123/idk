@@ -1234,7 +1234,10 @@ local function recordQuotaError(provider, message, status)
         for _, needle in ipairs({
             "used up", "free allocation", "quota", "insufficient",
             "no credits", "out of credits", "credit balance", "daily limit",
-            "monthly limit", "billing", "upgrade to", "not enough"
+            "monthly limit", "billing", "upgrade to", "not enough",
+            -- Daily/weekly caps (Groq answers "tokens per day (TPD): Limit ...
+            -- Used ...", OpenAI-compatible APIs say "requests per day").
+            "tokens per day", "requests per day", "per day (tpd", "per day (rpd"
         }) do
             if lower:find(needle, 1, true) then exhausted = true break end
         end
@@ -2052,35 +2055,175 @@ local function callProviderModel(messages, maxTokens, model)
     return nil, lastError, false
 end
 
+--==================================================
+-- AUTOMATIC PROVIDER FAILOVER
+--==================================================
+-- When a provider runs out of tokens (its free allowance is used up, so
+-- recordQuotaError flagged it "exhausted"), the script hops to the next provider
+-- in the list that still has a saved key and picks the model chosen for it:
+-- Groq -> OpenRouter -> Cohere -> AI Horde -> Synap -> Logfare -> Cloudflare.
+-- Google AI Studio is never picked automatically and the last provider does not
+-- wrap around to the first.
+--
+-- These live on the existing "session" table instead of as new top-level locals
+-- because this script's main chunk sits right at Luau's 200-register ceiling:
+-- extra top-level locals, or closures that capture the model/menu helpers, push
+-- the chunk over the limit and it stops compiling.
+session.fetchModels = fetchProviderModels
+session.rebuildModelMenu = rebuildModelMenu
+session.refreshProviderMenu = refreshProviderMenu
+
+-- The model each provider uses when the failover lands on it.
+session.failoverModels = {
+    groq = "qwen/qwen3.8-27b",
+    openrouter = "recursive/flint-v1.0:free",
+    aihorde = "ReadyArt/Wicked-Tutu-31B-Final",
+    synap = "qwen3-coder-30b",
+    logfare = "logfare/auto",
+    cloudflare = "@cf/openai/gpt-oss-120b"
+}
+
+-- Providers that must never be picked automatically.
+session.failoverSkip = {google = true}
+
+-- Finds a model by exact id, then case-insensitive id, then a loose substring
+-- match, so a provider-side rename still lands on the intended model.
+function session.findModelIndex(provider, wantedId)
+    if type(wantedId) ~= "string" or wantedId == "" then return nil end
+    local lower = wantedId:lower()
+
+    for index, model in ipairs(provider.models) do
+        if type(model.id) == "string" and model.id == wantedId then return index end
+    end
+    for index, model in ipairs(provider.models) do
+        if type(model.id) == "string" and model.id:lower() == lower then return index end
+    end
+    for index, model in ipairs(provider.models) do
+        if type(model.id) == "string" and model.id:lower():find(lower, 1, true) then
+            return index
+        end
+    end
+    return nil
+end
+
+-- Makes the provider's preferred failover model selectable: returns its index,
+-- adding it at the top of the list when the provider does not offer it.
+function session.ensurePreferredModel(provider)
+    local wanted = session.failoverModels[provider.id]
+    if not wanted then return nil end
+
+    local index = session.findModelIndex(provider, wanted)
+    if index then return index end
+
+    table.insert(provider.models, 1, {name = wanted, id = wanted, family = "Preferred"})
+    return 1
+end
+
+-- Moves the GUI to another provider: saves the current key, loads the new
+-- provider's free models, selects its failover model and repaints the window.
+-- It deliberately does NOT bump the reply/manual versions, so the request that
+-- triggered the switch still completes on the new provider.
+function session.switchToProvider(index, reason)
+    if index == selectedProvider then return false end
+
+    local fromProvider = PROVIDERS[selectedProvider]
+    apiKeys[fromProvider.id] = keyBox.Text:gsub("%s", "")
+
+    selectedProvider = index
+    local provider = PROVIDERS[index]
+    keyBox.Text = apiKeys[provider.id] or ""
+
+    local models = session.fetchModels(provider)
+    if type(models) == "table" and #models > 0 then
+        provider.models = models
+    end
+
+    selectedModel = session.ensurePreferredModel(provider) or 1
+    if not provider.models[selectedModel] then selectedModel = 1 end
+
+    providerButton.Text = provider.name
+    modelButton.Text = "MODEL: " .. provider.models[selectedModel].name .. "  v"
+    session.rebuildModelMenu()
+    session.refreshProviderMenu()
+    refreshQuotaLabel()
+
+    addMessage("AUTO-SWITCH", (reason or (fromProvider.name .. " is out of tokens"))
+        .. " - switched to " .. provider.name .. ", model "
+        .. provider.models[selectedModel].id .. ".", ORANGE)
+
+    return true
+end
+
+-- Picks the next provider in the list that has a saved key (or needs none) and
+-- is not already known to be out of tokens today.
+function session.autoSwitchProvider(fromProvider)
+    for index = selectedProvider + 1, #PROVIDERS do
+        local candidate = PROVIDERS[index]
+        if candidate.id ~= fromProvider.id and not session.failoverSkip[candidate.id] then
+            local key = apiKeys[candidate.id]
+            key = type(key) == "string" and key:gsub("%s", "") or ""
+            local usable = candidate.requiresKey == false or key ~= ""
+            local record = quotaRecord(candidate)
+            if usable and not record.exhausted then
+                if session.switchToProvider(index, fromProvider.name .. " is out of tokens") then
+                    return true
+                end
+            end
+        end
+    end
+    return false, "no later provider with a saved key and remaining tokens is available"
+end
+
 -- Cloudflare still ships models that answer 400/403 on the chat endpoint, so
 -- when the selected model is rejected, quietly try the next couple in the list
 -- instead of failing the whole request. Every other provider only tries the one
--- model the user picked.
+-- model the user picked. When a provider's free allowance is used up the call
+-- hops to the next provider (with its chosen model) and retries there.
 local function callProvider(messages, maxTokens)
-    local provider = PROVIDERS[selectedProvider]
-    local model = provider.models[selectedModel]
-    if not model then
-        return nil, "No model selected."
-    end
+    local lastError
+    local hops = 0
 
-    local candidates = {model}
-    if provider.id == "cloudflare" and #provider.models > 1 then
-        for offset = 1, math.min(2, #provider.models - 1) do
-            candidates[#candidates + 1] =
-                provider.models[((selectedModel - 1 + offset) % #provider.models) + 1]
+    while session.alive do
+        local provider = PROVIDERS[selectedProvider]
+        local model = provider.models[selectedModel]
+        if not model then
+            return nil, "No model selected."
+        end
+
+        local candidates = {model}
+        if provider.id == "cloudflare" and #provider.models > 1 then
+            for offset = 1, math.min(2, #provider.models - 1) do
+                candidates[#candidates + 1] =
+                    provider.models[((selectedModel - 1 + offset) % #provider.models) + 1]
+            end
+        end
+
+        for _, candidate in ipairs(candidates) do
+            local text, err, rejected = callProviderModel(messages, maxTokens, candidate)
+            if text then return text end
+            lastError = err
+            -- Only a rejected model (400/403) is worth retrying with another one.
+            if not rejected then break end
+        end
+
+        -- Out of tokens on this provider: hop forward and retry the request.
+        if quotaRecord(provider).exhausted then
+            hops = hops + 1
+            if hops > #PROVIDERS then return nil, lastError end
+
+            local switched, switchError = session.autoSwitchProvider(provider)
+            if switched then
+                lastError = nil
+            else
+                return nil, (lastError or "Provider is out of tokens.")
+                    .. " (" .. tostring(switchError) .. ")"
+            end
+        else
+            return nil, lastError
         end
     end
 
-    local lastError
-    for _, candidate in ipairs(candidates) do
-        local text, err, rejected = callProviderModel(messages, maxTokens, candidate)
-        if text then return text end
-        lastError = err
-        -- Only a rejected model (400/403) is worth retrying with another one.
-        if not rejected then break end
-    end
-
-    return nil, lastError
+    return nil, lastError or "Script stopped."
 end
 
 local function askProvider(system, user)
@@ -2681,6 +2824,26 @@ local function decodeQuiz(answer)
     end
     data.explanation = type(data.explanation) == "string"
         and trim(data.explanation) or ""
+
+    -- The AI tends to put the correct answer first ("A") almost every time, so
+    -- shuffle the four options here and move the answer letter with them. The
+    -- options are already known to be distinct, so matching by text is safe.
+    local correctText = data.options[data.answer]
+    local letters = {"A", "B", "C", "D"}
+    local texts = {data.options.A, data.options.B, data.options.C, data.options.D}
+    for i = #texts, 2, -1 do
+        local j = math.random(i)
+        texts[i], texts[j] = texts[j], texts[i]
+    end
+    local shuffled = {}
+    local newAnswer
+    for i, letter in ipairs(letters) do
+        shuffled[letter] = texts[i]
+        if texts[i] == correctText then newAnswer = letter end
+    end
+    data.options = shuffled
+    data.answer = newAnswer
+
     return data
 end
 
@@ -4014,6 +4177,13 @@ addMessage("SYSTEM",
 addMessage("SYSTEM",
     "PRIVACY: ON hides your API key on screen and blocks editing it, so it "
         .. "cannot be read over your shoulder. Saved by SAVE.", BLUE)
+addMessage("SYSTEM",
+    "AUTO-SWITCH: when a provider runs out of tokens the script moves to the "
+        .. "next provider that has a key and uses the model chosen for it - Groq: "
+        .. "qwen/qwen3.8-27b, OpenRouter: recursive/flint-v1.0:free, AI Horde: "
+        .. "ReadyArt/Wicked-Tutu-31B-Final, Synap: qwen3-coder-30b, Logfare: "
+        .. "logfare/auto, Cloudflare: @cf/openai/gpt-oss-120b. Google AI Studio "
+        .. "is never picked automatically.", BLUE)
 
 -- Paint the bottom TOKENS line for the restored provider right away, then try
 -- to pull a live allowance (OpenRouter credits, AI Horde kudos) in the
