@@ -948,6 +948,22 @@ local function quotaRecord(provider)
     return record
 end
 
+-- Remember, per provider, that its free allowance ran out. It is only honoured
+-- for the same calendar day (most free tiers reset daily), so re-running the
+-- script does not show "inf" again for an allowance we already know is gone.
+local savedQuotaErrors = type(saved.quotaErrors) == "table" and saved.quotaErrors or {}
+local quotaDay = os.date and os.date("%Y-%m-%d") or nil
+
+for _, provider in ipairs(PROVIDERS) do
+    local info = savedQuotaErrors[provider.id]
+    if type(info) == "table" and info.text
+        and (quotaDay == nil or info.day == quotaDay) then
+        local record = quotaRecord(provider)
+        record.quota = info.text
+        record.exhausted = true
+    end
+end
+
 local function refreshQuotaLabel()
     if not session.alive then return end
     local provider = PROVIDERS[selectedProvider]
@@ -1017,6 +1033,16 @@ end
 local function recordTokenUsage(provider, response, data)
     local record = quotaRecord(provider)
 
+    -- A reply got through, so any earlier "allowance used up" flag was stale
+    -- (a new day/window, or a different model). Clear it and fall back to the
+    -- provider's published allowance until fresh numbers arrive.
+    if record.exhausted then
+        record.exhausted = false
+        record.quota = nil
+        record.note = nil
+        savedQuotaErrors[provider.id] = nil
+    end
+
     local usage = type(data) == "table" and data.usage
     if type(usage) == "table" then
         local total = tonumber(usage.total_tokens)
@@ -1035,6 +1061,54 @@ local function recordTokenUsage(provider, response, data)
     if fromHeaders then
         record.quota = fromHeaders
         record.note = nil
+    end
+
+    refreshQuotaLabel()
+end
+
+-- Providers do not always publish a balance, but they DO refuse calls once the
+-- free allowance is gone ("you have used up your daily free allocation of 10000
+-- neurons", "insufficient credits", HTTP 402/429 ...). Without this the GUI kept
+-- claiming "inf" while the provider was really at zero. Keywords below split a
+-- hard "allowance used up" from a soft, temporary rate limit.
+local function recordQuotaError(provider, message, status)
+    local record = quotaRecord(provider)
+    local text = trim(tostring(message or ""))
+    local lower = text:lower()
+    status = tonumber(status) or 0
+
+    -- Exhaustion keywords win even on HTTP 429: Cloudflare answers 429 with
+    -- "you have used up your daily free allocation", which is not a soft limit.
+    local exhausted = status == 402
+    if not exhausted then
+        for _, needle in ipairs({
+            "used up", "free allocation", "quota", "insufficient",
+            "no credits", "out of credits", "credit balance", "daily limit",
+            "monthly limit", "billing", "upgrade to", "not enough"
+        }) do
+            if lower:find(needle, 1, true) then exhausted = true break end
+        end
+    end
+
+    local rateLimited = not exhausted and (status == 429
+        or lower:find("rate limit", 1, true)
+        or lower:find("too many requests", 1, true)
+        or lower:find("slow down", 1, true))
+
+    if exhausted then
+        -- Show the provider's own number where it gives one, e.g. Cloudflare's
+        -- "10000 neurons". The full error text is already printed in the chat.
+        local neurons = lower:find("neuron", 1, true)
+        record.quota = neurons and "0 neurons left (daily free allowance used up)"
+            or "0 (allowance used up)"
+        record.note = nil
+        record.exhausted = true
+        savedQuotaErrors[provider.id] = {text = record.quota, day = quotaDay}
+    elseif rateLimited then
+        record.note = "temporarily rate limited"
+        record.exhausted = false
+    else
+        return
     end
 
     refreshQuotaLabel()
@@ -1758,6 +1832,10 @@ local function callProviderModel(messages, maxTokens, model)
                     .. " (this model does not support the chat endpoint - pick another)"
             end
 
+            -- Reflect the provider's own quota answer on the GUI line, so it
+            -- stops reading "inf" the moment the free allowance is really gone.
+            recordQuotaError(provider, lastError, status)
+
             if status ~= 429 and status < 500 then
                 return nil, lastError, (status == 400 or status == 403)
             end
@@ -2321,7 +2399,10 @@ local function persistState()
         blockedPlayers = stringKeys(blockedPlayers),
         allowedPlayers = stringKeys(allowedPlayers),
         grabbedInfo = stringKeys(grabbedInfo),
-        chatMessages = buildChatSnapshot()
+        chatMessages = buildChatSnapshot(),
+        -- Which providers had their free allowance run out today (see
+        -- recordQuotaError), so a re-run keeps showing the truth.
+        quotaErrors = savedQuotaErrors
     }
     if type(writefile) ~= "function" then return false, "writefile unavailable." end
     local ok, result = pcall(function()
@@ -3663,7 +3744,9 @@ addMessage("SYSTEM",
     "The bottom TOKENS line shows the current provider's remaining tokens and "
         .. "its cost per reply; it updates after every message. TOKENS lists all "
         .. "providers. \"inf\" = no token balance, capped by requests per "
-        .. "minute/day instead. OpenRouter credits and AI Horde kudos read live.", BLUE)
+        .. "minute/day instead. OpenRouter credits and AI Horde kudos read live. "
+        .. "If a provider refuses a call because its free allowance is used up, "
+        .. "the line switches from \"inf\" to 0 with the reason.", BLUE)
 addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
     "/graball grabs the game + every player for this session "
