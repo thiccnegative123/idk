@@ -136,6 +136,28 @@ local PROVIDERS = {
         }
     },
     {
+        id = "logfare",
+        name = "Logfare (Free, all free models)",
+        url = "https://logfare.ai/v1/chat/completions",
+        modelsUrl = "https://logfare.ai/v1/models",
+        keyUrl = "https://logfare.ai/register",
+        keyName = "Logfare API key",
+        freeOnly = true,
+        -- Logfare is free with fair-use limits (no credit card). Its live model
+        -- list tags every model with access_tier: "standard" is free, while
+        -- "premium"/"pro" need an opt-in (data sale / training). isFreeModel()
+        -- accepts only standard models that serve chat/completions, so the
+        -- built-in list below is just the offline fallback.
+        models = {
+            {name = "Logfare Auto (best available)", id = "logfare/auto", family = "Logfare"},
+            {name = "Qwen 3.8 27B", id = "qwen-3.8-27b", family = "Qwen"},
+            {name = "Gemma 4 26B", id = "gemma-4-26b", family = "Google"},
+            {name = "Gemma 4 31B IT", id = "gemma-4-31b-it", family = "Google"},
+            {name = "Funfly (stealth)", id = "stealth/funfly", family = "Stealth"},
+            {name = "Autistic Parrot (stealth)", id = "stealth/autistic-parrot", family = "Stealth"}
+        }
+    },
+    {
         id = "google",
         name = "Google AI Studio (Free tier)",
         url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
@@ -656,6 +678,17 @@ local FREE_MODEL_IDS = {
     },
     synap = {
         ["qwen3-coder-30b"] = true
+    },
+    -- Offline fallback for Logfare. The live /v1/models response is the real
+    -- source of truth (see the logfare branch in isFreeModel); these ids are
+    -- only used if the API stops reporting access tiers.
+    logfare = {
+        ["logfare/auto"] = true,
+        ["qwen-3.8-27b"] = true,
+        ["gemma-4-26b"] = true,
+        ["gemma-4-31b-it"] = true,
+        ["stealth/funfly"] = true,
+        ["stealth/autistic-parrot"] = true
     }
 }
 
@@ -664,6 +697,35 @@ local function isFreeModel(provider, item, id)
     -- Cloudflare Workers AI models are also all free within the daily allowance.
     if provider.id == "aihorde" or provider.id == "cloudflare" then
         return true
+    end
+
+    if provider.id == "logfare" then
+        -- Logfare reports an access tier per model. "standard" is free;
+        -- "premium" and "pro" need an opt-in, so reject them. Only keep models
+        -- that actually serve the chat/completions endpoint (the catalog also
+        -- carries image, audio, embedding and "decisions" models).
+        if type(item) ~= "table" then
+            return FREE_MODEL_IDS.logfare[id] == true
+        end
+
+        if type(item.access_tier) == "string" then
+            if item.access_tier ~= "standard" then
+                return false
+            end
+
+            if type(item.endpoints) == "table" then
+                for _, endpoint in ipairs(item.endpoints) do
+                    if endpoint == "chat/completions" then
+                        return true
+                    end
+                end
+                return false
+            end
+
+            return true
+        end
+
+        return FREE_MODEL_IDS.logfare[id] == true
     end
 
     if provider.id == "openrouter" then
@@ -3247,7 +3309,7 @@ end)
 -- STARTUP
 --==================================================
 addMessage("SYSTEM", "PRIVATE AI v20.1 loaded - FREE MODELS ONLY.", GREEN)
-addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, AI Horde, Synap, Google AI Studio, Cloudflare.", BLUE)
+addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, AI Horde, Synap, Logfare, Google AI Studio, Cloudflare.", BLUE)
 addMessage("SYSTEM", "Click PROVIDERS: it copies the API-key signup page, not your API key.", BLUE)
 addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
