@@ -290,6 +290,8 @@ local allowCommands = saved.allowCommands == true
 -- TTS_VOICES below). Both are remembered in the save file.
 local ttsEnabled = saved.ttsEnabled ~= false
 local ttsVoiceIndex = math.clamp(math.floor(tonumber(saved.ttsVoiceIndex) or 2), 1, 31)
+-- Privacy mode: hides the API key on screen without touching its real value.
+local privacyMode = saved.privacyMode == true
 local commandAccessVersion = 0
 local savedLoopGrabEnabled = saved.loopGrabEnabled == true
 local history = type(saved.history) == "table" and saved.history or {}
@@ -403,7 +405,26 @@ local circleButton = button("CIRCLE", 370, 6, 62, BLUE, header)
 local nocdButton = button("NOCD", 438, 6, 58, GRAY, header)
 local clearButton = button("CLEAR", 502, 6, 62, RED, header)
 local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
-local keyBox = textBox(54, "API key", savedKeyFor(PROVIDERS[selectedProvider].id))
+local keyBox = textBox(54, "API key", savedKeyFor(PROVIDERS[selectedProvider].id), 12, 508)
+-- Privacy mode overlay: an opaque panel sits over the key box so the key cannot
+-- be read off the screen. The real value stays in keyBox.Text for the API calls,
+-- and the overlay blocks editing while it is shown.
+local privacyOverlay = create("TextLabel", {
+    Position = UDim2.fromOffset(12, 54),
+    Size = UDim2.fromOffset(508, 36),
+    BackgroundColor3 = PANEL,
+    BorderSizePixel = 0,
+    Text = "",
+    TextColor3 = WHITE,
+    Font = Enum.Font.Gotham,
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    Visible = false,
+    Active = true,
+    ZIndex = 5
+}, main)
+round(privacyOverlay)
+local privacyButton = button("PRIVACY: OFF", 528, 56, 110, GRAY)
 local personalityBox = textBox(98, "Personality", saved.personality or "Friendly")
 local modelButton = button("MODEL: " .. PROVIDERS[selectedProvider].models[selectedModel].name .. "  v",
     12, 142, 320, Color3.fromRGB(105, 85, 175))
@@ -680,6 +701,13 @@ local function refreshButtons()
     voiceButton.Text = "VOICE: "
         .. (TTS_VOICES[ttsVoiceIndex] and TTS_VOICES[ttsVoiceIndex].name or "?")
     voiceButton.BackgroundColor3 = ttsEnabled and Color3.fromRGB(85, 105, 165) or GRAY
+    privacyButton.Text = privacyMode and "PRIVACY: ON" or "PRIVACY: OFF"
+    privacyButton.BackgroundColor3 = privacyMode and GREEN or GRAY
+    privacyOverlay.Visible = privacyMode
+    if privacyMode then
+        privacyOverlay.Text = "##############  API key hidden (privacy mode)"
+    end
+    keyBox.TextEditable = not privacyMode
 end
 
 local function updateQuizButton()
@@ -2568,6 +2596,7 @@ local function persistState()
         allowCommands = allowCommands,
         ttsEnabled = ttsEnabled,
         ttsVoiceIndex = ttsVoiceIndex,
+        privacyMode = privacyMode,
         loopGrabEnabled = loopGrabEnabled,
         history = history,
         playerMemory = stringKeys(playerMemory),
@@ -3677,6 +3706,16 @@ connect(ttsButton.MouseButton1Click, function()
     end
 end)
 
+connect(privacyButton.MouseButton1Click, function()
+    privacyMode = not privacyMode
+    refreshButtons()
+    addMessage("PRIVACY", privacyMode
+        and "Privacy mode ON: the API key is hidden on screen and cannot be "
+            .. "edited. Click PRIVACY again to show it."
+        or "Privacy mode OFF: the API key is visible and editable again.",
+        privacyMode and GREEN or ORANGE)
+end)
+
 connect(restrictButton.MouseButton1Click, function()
     restrictToAllowed = not restrictToAllowed
     invalidateReplies()
@@ -3972,6 +4011,9 @@ addMessage("SYSTEM",
     "TTS: ON/OFF toggles text-to-speech for every AI reply (chat and GUI). "
         .. "VOICE opens the list of Roblox voices (British, US, Australian, "
         .. "Spanish, German, French, Japanese and more). Both are saved by SAVE.", BLUE)
+addMessage("SYSTEM",
+    "PRIVACY: ON hides your API key on screen and blocks editing it, so it "
+        .. "cannot be read over your shoulder. Saved by SAVE.", BLUE)
 
 -- Paint the bottom TOKENS line for the restored provider right away, then try
 -- to pull a live allowance (OpenRouter credits, AI Horde kudos) in the
