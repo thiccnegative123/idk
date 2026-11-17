@@ -55,6 +55,12 @@ local PROVIDERS = {
         keyUrl = "https://console.groq.com/keys",
         keyName = "Groq API key",
         freeOnly = true,
+        -- TOKENS / COST. Shown in the GUI quota line, in the provider menu, on
+        -- selection, and by the TOKENS button. Groq reports the remaining
+        -- token allowance in its response headers, so its number becomes exact
+        -- after the first reply.
+        quotaStatic = "unknown until the first reply",
+        tokenCost = "~500 tokens/reply",
         models = {
             {name = "GPT-OSS 120B", id = "openai/gpt-oss-120b", family = "OpenAI"},
             {name = "GPT-OSS 20B", id = "openai/gpt-oss-20b", family = "OpenAI"},
@@ -70,6 +76,10 @@ local PROVIDERS = {
         keyUrl = "https://openrouter.ai/keys",
         keyName = "OpenRouter API key",
         freeOnly = true,
+        -- Credits and the free-model daily quota are read live from
+        -- GET /api/v1/key (see livePoints).
+        quotaStatic = "credits + free requests/day",
+        tokenCost = "0 credits (:free models)",
         models = {
             {name = "Llama 3.3 70B Free", id = "meta-llama/llama-3.3-70b-instruct:free", family = "Meta"},
             {name = "DeepSeek V3 Free", id = "deepseek/deepseek-chat-v3-0324:free", family = "DeepSeek"},
@@ -87,6 +97,8 @@ local PROVIDERS = {
         keyUrl = "https://dashboard.cohere.com/api-keys",
         keyName = "Cohere API key",
         freeOnly = true,
+        quotaStatic = "inf (free trial quota)",
+        tokenCost = "0 (1,000 calls/month)",
         models = {
             {name = "Command A", id = "command-a-03-2025", family = "Cohere"},
             {name = "Command R+", id = "command-r-plus-08-2024", family = "Cohere"},
@@ -101,6 +113,9 @@ local PROVIDERS = {
         keyUrl = "https://aihorde.net/register",
         keyName = "AI Horde API key",
         freeOnly = true,
+        -- Kudos are read live from GET /api/v2/user (see livePoints).
+        quotaStatic = "kudos (read live)",
+        tokenCost = "~1 kudos/reply",
         models = {
             {name = "Qwen3 0.6B", id = "koboldcpp/Qwen3-0.6B", family = "koboldcpp"},
             {name = "Qwen3 1.7B", id = "koboldcpp/Qwen3-1.7B", family = "koboldcpp"},
@@ -131,6 +146,8 @@ local PROVIDERS = {
         keyUrl = "https://synap402.com/",
         keyName = "Synap API key",
         freeOnly = true,
+        quotaStatic = "inf (free tier)",
+        tokenCost = "unknown (free tier)",
         models = {
             {name = "Qwen3 Coder 30B", id = "qwen3-coder-30b", family = "Qwen"}
         }
@@ -143,6 +160,10 @@ local PROVIDERS = {
         keyUrl = "https://logfare.ai/register",
         keyName = "Logfare API key",
         freeOnly = true,
+        -- Every Logfare tier is free: there is no balance, only request
+        -- budgets (40/min, 1,000/hour, 5,000/day for a normal account).
+        quotaStatic = "inf (request budget)",
+        tokenCost = "0 (5,000 requests/day)",
         -- Logfare is free with fair-use limits (no credit card). Its live model
         -- list tags every model with access_tier: "standard" is free, while
         -- "premium"/"pro" need an opt-in (data sale / training). isFreeModel()
@@ -165,6 +186,8 @@ local PROVIDERS = {
         keyUrl = "https://aistudio.google.com/apikey",
         keyName = "Google AI Studio API key",
         freeOnly = true,
+        quotaStatic = "inf (free tier)",
+        tokenCost = "0 (rate-limited)",
         models = {
             {name = "Gemini 2.0 Flash", id = "gemini-2.0-flash", family = "Google"},
             {name = "Gemini 2.0 Flash Lite", id = "gemini-2.0-flash-lite", family = "Google"}
@@ -178,6 +201,8 @@ local PROVIDERS = {
         keyUrl = "https://dash.cloudflare.com/profile/api-tokens",
         keyName = "Cloudflare API token",
         freeOnly = true,
+        quotaStatic = "inf (10,000 neurons/day)",
+        tokenCost = "0 (free daily neurons)",
         -- Hand-picked from Cloudflare's live catalog: only models that are
         -- currently listed AND answer the OpenAI-compatible /ai/v1/chat/completions
         -- endpoint. Removed/deprecated ids (llama-3.1-8b-instruct, ...-fast,
@@ -377,7 +402,8 @@ local saveButton = button("SAVE", 570, 6, 68, GREEN, header)
 local keyBox = textBox(54, "API key", savedKeyFor(PROVIDERS[selectedProvider].id))
 local personalityBox = textBox(98, "Personality", saved.personality or "Friendly")
 local modelButton = button("MODEL: " .. PROVIDERS[selectedProvider].models[selectedModel].name .. "  v",
-    12, 142, 626, Color3.fromRGB(105, 85, 175))
+    12, 142, 458, Color3.fromRGB(105, 85, 175))
+local tokensButton = button("TOKENS", 478, 142, 160, Color3.fromRGB(85, 105, 165))
 
 local modelMenu = create("ScrollingFrame", {
     Position = UDim2.fromOffset(12, 178),
@@ -776,6 +802,267 @@ local function httpFailureHint(provider, status)
     return provider.name .. " HTTP " .. status
 end
 
+--==================================================
+-- POINTS / BALANCE
+--==================================================
+-- Only two of these providers publish a real balance: OpenRouter (credits and
+-- the free-model daily quota) and AI Horde (kudos). Every other one is a free
+-- tier with no balance at all - it is capped by requests per minute/day, so its
+-- points are infinite ("inf") and each message costs 0 points.
+local function jsonGet(url, headers)
+    if type(httpRequest) ~= "function" then
+        return nil, "HTTP support unavailable."
+    end
+
+    local ok, response = pcall(function()
+        return httpRequest({Url = url, Method = "GET", Headers = headers})
+    end)
+    if not ok or type(response) ~= "table" then
+        return nil, "Request failed."
+    end
+
+    local status = tonumber(response.StatusCode or response.Status) or 0
+    local decoded, data = pcall(function()
+        return HttpService:JSONDecode(response.Body or "")
+    end)
+    if not decoded or type(data) ~= "table" then
+        return nil, "Unreadable reply (HTTP " .. status .. ")."
+    end
+
+    if status < 200 or status >= 300 then
+        local message = "HTTP " .. status
+        if type(data.error) == "table" and data.error.message then
+            message = tostring(data.error.message)
+        elseif type(data.error) == "string" then
+            message = data.error
+        elseif type(data.message) == "string" then
+            message = data.message
+        end
+        return nil, message
+    end
+
+    return data
+end
+
+local function openRouterPoints(key)
+    local data, err = jsonGet("https://openrouter.ai/api/v1/key", {
+        ["Authorization"] = "Bearer " .. key,
+        ["Accept"] = "application/json"
+    })
+    if not data then return nil, err end
+
+    local info = type(data.data) == "table" and data.data or {}
+    local parts = {}
+
+    local remaining = tonumber(info.limit_remaining)
+    if remaining then
+        parts[#parts + 1] = string.format("%.2f credits left", remaining)
+    else
+        parts[#parts + 1] = "inf credits (no key limit)"
+    end
+
+    local free = info.free_model_daily_requests
+    if type(free) == "table" and tonumber(free.remaining) then
+        parts[#parts + 1] = string.format("%d of %d free requests left today",
+            math.floor(tonumber(free.remaining)), math.floor(tonumber(free.limit) or 0))
+    end
+
+    local usage = tonumber(info.usage)
+    if usage then
+        parts[#parts + 1] = string.format("%.2f credits used all time", usage)
+    end
+
+    if info.is_free_tier == true then
+        parts[#parts + 1] = "free-tier account"
+    end
+
+    return table.concat(parts, " | ")
+end
+
+local function aiHordePoints(key)
+    local data, err = jsonGet("https://aihorde.net/api/v2/user", {
+        ["apikey"] = key,
+        ["Accept"] = "application/json",
+        ["Client-Agent"] = "PrivateGroqAI:18.6:unknown"
+    })
+    if not data then return nil, err end
+
+    local kudos = tonumber(data.kudos)
+    if not kudos then return nil, "no kudos in the reply" end
+
+    local parts = {string.format("%d kudos", math.floor(kudos))}
+    local details = type(data.kudos_details) == "table" and data.kudos_details or {}
+    local earned = tonumber(details.earned)
+    if earned then
+        parts[#parts + 1] = string.format("%d earned from your workers", math.floor(earned))
+    end
+    local concurrency = tonumber(data.concurrency)
+    if concurrency then
+        parts[#parts + 1] = concurrency .. " concurrent requests"
+    end
+
+    return table.concat(parts, " | ")
+end
+
+-- Returns the live balance text, or nil plus a reason when the provider has no
+-- balance endpoint (most of them) or no key has been saved yet.
+local function livePoints(provider, key)
+    key = type(key) == "string" and key:gsub("%s", "") or ""
+    if key == "" then
+        return nil, "no " .. tostring(provider.keyName) .. " saved yet"
+    end
+
+    if provider.id == "openrouter" then return openRouterPoints(key) end
+    if provider.id == "aihorde" then return aiHordePoints(key) end
+
+    return nil, "no balance endpoint"
+end
+
+--==================================================
+-- TOKEN QUOTA LINE (bottom of the window)
+--==================================================
+-- Every provider meters you differently: OpenRouter in credits, AI Horde in
+-- kudos, Groq in tokens per window, most free tiers in requests per day. This
+-- line shows whatever the current provider actually reports, plus how many
+-- tokens the last reply really cost (read from the response's usage field).
+local quotaLabel = create("TextLabel", {
+    Position = UDim2.fromOffset(12, 672),
+    Size = UDim2.fromOffset(626, 16),
+    BackgroundTransparency = 1,
+    Text = "",
+    TextColor3 = BLUE,
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextTruncate = Enum.TextTruncate.AtEnd
+}, main)
+
+local providerQuota = {}
+
+local function quotaRecord(provider)
+    local record = providerQuota[provider.id]
+    if not record then
+        record = {quota = nil, note = nil, lastTokens = nil, totalTokens = 0, replies = 0}
+        providerQuota[provider.id] = record
+    end
+    return record
+end
+
+local function refreshQuotaLabel()
+    if not session.alive then return end
+    local provider = PROVIDERS[selectedProvider]
+    local record = quotaRecord(provider)
+    local quota = record.quota or provider.quotaStatic or "unknown"
+    if record.note then quota = quota .. " (" .. record.note .. ")" end
+
+    -- Cost per reply starts as the provider's published estimate and becomes the
+    -- measured average once real replies have been counted, so every provider
+    -- ends up showing its own true token cost.
+    local cost = tostring(provider.tokenCost or "unknown")
+    if record.replies > 0 then
+        cost = string.format("%s (measured avg %d tokens/reply)",
+            cost, math.floor(record.totalTokens / record.replies))
+    end
+
+    local parts = {
+        "TOKENS LEFT: " .. quota,
+        "COST/REPLY: " .. cost
+    }
+    if record.lastTokens then
+        parts[#parts + 1] = string.format("last reply %d tokens (total %d in %d replies)",
+            record.lastTokens, record.totalTokens, record.replies)
+    end
+    quotaLabel.Text = table.concat(parts, "  |  ")
+end
+
+-- Providers that expose a remaining allowance put it in the response headers
+-- (Groq and most OpenAI-compatible APIs do this). Header names are matched
+-- case-insensitively and the "-day" long window is skipped so the shorter,
+-- more useful window wins.
+local function quotaFromHeaders(headers)
+    if type(headers) ~= "table" then return nil end
+
+    local found = {}
+    for name, value in pairs(headers) do
+        found[tostring(name):lower()] = tostring(value)
+    end
+
+    local function scan(needleA, needleB)
+        for key, value in pairs(found) do
+            if key:find(needleA, 1, true) and key:find(needleB, 1, true)
+                and not key:find("-day", 1, true) then
+                return value
+            end
+        end
+        return nil
+    end
+
+    local remainingTokens = found["x-ratelimit-remaining-tokens"]
+        or scan("remaining", "token")
+    local remainingRequests = found["x-ratelimit-remaining-requests"]
+        or scan("remaining", "request")
+
+    local parts = {}
+    if remainingTokens then
+        parts[#parts + 1] = remainingTokens .. " tokens left this window"
+    end
+    if remainingRequests then
+        parts[#parts + 1] = remainingRequests .. " requests left"
+    end
+    return #parts > 0 and table.concat(parts, ", ") or nil
+end
+
+-- Called after every successful reply: stores the real token cost of that
+-- message and any refreshed allowance the provider sent back.
+local function recordTokenUsage(provider, response, data)
+    local record = quotaRecord(provider)
+
+    local usage = type(data) == "table" and data.usage
+    if type(usage) == "table" then
+        local total = tonumber(usage.total_tokens)
+        if not total then
+            total = (tonumber(usage.prompt_tokens) or 0)
+                + (tonumber(usage.completion_tokens) or 0)
+        end
+        if total and total > 0 then
+            record.lastTokens = math.floor(total)
+            record.totalTokens = record.totalTokens + math.floor(total)
+            record.replies = record.replies + 1
+        end
+    end
+
+    local fromHeaders = quotaFromHeaders(response and response.Headers)
+    if fromHeaders then
+        record.quota = fromHeaders
+        record.note = nil
+    end
+
+    refreshQuotaLabel()
+end
+
+-- Runs when a provider is clicked: pulls the live balance where one exists and
+-- repaints the quota line straight away.
+local function updateProviderQuota(provider, key, announce)
+    local record = quotaRecord(provider)
+    local live, liveError = livePoints(provider, key)
+
+    if live then
+        record.quota = live
+        record.note = nil
+    elseif liveError and liveError ~= "no balance endpoint" then
+        record.note = liveError
+    end
+
+    refreshQuotaLabel()
+
+    if announce then
+        addMessage("TOKENS", provider.name
+            .. " -> TOKENS LEFT: " .. (record.quota or provider.quotaStatic)
+            .. " | COST/REPLY: " .. tostring(provider.tokenCost)
+            .. (record.note and ("  (" .. record.note .. ")") or ""), BLUE)
+    end
+end
+
 -- Cloudflare keeps the account id inside the endpoint path. Paste either
 -- "account_id:api_token" or just the API token: when only a token is given the
 -- account id is looked up once through the Cloudflare API and cached per token.
@@ -1061,13 +1348,15 @@ local function refreshProviderMenu()
     local y = 5
 
     for providerIndex, provider in ipairs(PROVIDERS) do
+        -- Plain one-line row: the token allowance is announced in the chat when
+        -- the provider is picked, so the list itself stays clean.
         local option = button(
-            provider.name .. " - " .. provider.keyUrl,
+            provider.name,
             5, y, 604,
             providerIndex == selectedProvider and GREEN or PANEL,
             providerMenu
         )
-        option.TextSize = 10
+        option.TextSize = 11
         option.ZIndex = 21
         option.TextTruncate = Enum.TextTruncate.AtEnd
 
@@ -1092,6 +1381,9 @@ local function refreshProviderMenu()
 
             addMessage("PROVIDER", "Selected " .. provider.name, BLUE)
             addMessage("PROVIDER", "API key page: " .. provider.keyUrl, BLUE)
+            -- Reads the live remaining allowance where the provider publishes one
+            -- and repaints the bottom quota line, then announces it in the chat.
+            updateProviderQuota(provider, keyBox.Text, true)
 
             if copied then
                 addMessage("PROVIDER", "API key page link copied to clipboard.", GREEN)
@@ -1436,6 +1728,10 @@ local function callProviderModel(messages, maxTokens, model)
                 if type(content) ~= "string" or trim(content) == "" then
                     return nil, "Model returned no text. Try another model."
                 end
+
+                -- Store what this reply really cost (data.usage) and any refreshed
+                -- remaining allowance the provider sent in its response headers.
+                recordTokenUsage(provider, response, data)
 
                 return trim(content)
             end
@@ -3222,6 +3518,58 @@ connect(saveButton.MouseButton1Click, function()
     end
 end)
 
+-- TOKENS: lists every provider with its remaining token allowance and what one
+-- reply costs. OpenRouter (credits + free-model daily quota) and AI Horde
+-- (kudos) are queried live; the rest have no token balance at all, so they
+-- report "inf" and are capped by requests per minute/day instead.
+local tokensBusy = false
+
+connect(tokensButton.MouseButton1Click, function()
+    if tokensBusy then return end
+    tokensBusy = true
+    tokensButton.Text = "CHECKING..."
+
+    addMessage("TOKENS", "Remaining tokens and cost per reply, for every provider:", BLUE)
+
+    task.spawn(function()
+        for index, provider in ipairs(PROVIDERS) do
+            if not session.alive then break end
+
+            local key = apiKeys[provider.id]
+            if index == selectedProvider then key = keyBox.Text end
+
+            local live, liveError = livePoints(provider, key)
+            local record = quotaRecord(provider)
+            local value = live or record.quota or provider.quotaStatic
+            local line = provider.name
+                .. " | Tokens left: " .. tostring(value)
+                .. " | Cost/reply: " .. provider.tokenCost
+
+            if not live and liveError and liveError ~= "no balance endpoint" then
+                line = line .. "  (" .. liveError .. ")"
+            end
+            if record.lastTokens then
+                line = line .. string.format("  [last reply %d tokens, %d total in %d replies]",
+                    record.lastTokens, record.totalTokens, record.replies)
+            end
+
+            addMessage("TOKENS", line, live and GREEN or WHITE)
+            task.wait(0.05)
+        end
+
+        if session.alive then
+            addMessage("TOKENS",
+                "Live numbers need that provider's key saved with SAVE. "
+                    .. "\"inf\" = the provider has no token balance, it is capped by "
+                    .. "requests per minute/day instead. Providers that report usage "
+                    .. "update the bottom TOKENS line after every reply.", ORANGE)
+            tokensButton.Text = "TOKENS"
+        end
+
+        tokensBusy = false
+    end)
+end)
+
 connect(Players.PlayerRemoving, function(target)
     local userId = target.UserId
     playerVersions[userId] = (playerVersions[userId] or 0) + 1
@@ -3311,6 +3659,11 @@ end)
 addMessage("SYSTEM", "PRIVATE AI v20.1 loaded - FREE MODELS ONLY.", GREEN)
 addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, AI Horde, Synap, Logfare, Google AI Studio, Cloudflare.", BLUE)
 addMessage("SYSTEM", "Click PROVIDERS: it copies the API-key signup page, not your API key.", BLUE)
+addMessage("SYSTEM",
+    "The bottom TOKENS line shows the current provider's remaining tokens and "
+        .. "its cost per reply; it updates after every message. TOKENS lists all "
+        .. "providers. \"inf\" = no token balance, capped by requests per "
+        .. "minute/day instead. OpenRouter credits and AI Horde kudos read live.", BLUE)
 addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
     "/graball grabs the game + every player for this session "
@@ -3339,5 +3692,13 @@ addMessage("SYSTEM",
 addMessage("SYSTEM",
     "Each provider keeps its own API key: paste one, click SAVE, "
         .. "and switch providers freely. Keys are remembered per provider.", ORANGE)
+
+-- Paint the bottom TOKENS line for the restored provider right away, then try
+-- to pull a live allowance (OpenRouter credits, AI Horde kudos) in the
+-- background so startup is never blocked on the network.
+refreshQuotaLabel()
+task.spawn(function()
+    updateProviderQuota(PROVIDERS[selectedProvider], keyBox.Text, false)
+end)
 
 print("PRIVATE GROQ AI v18.6 loaded: GRABALL + GRABGAME + RATEGAME + RATEAVATAR + QUIZGAME")
