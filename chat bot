@@ -103,20 +103,23 @@ local PROVIDERS = {
         freeOnly = true,
         models = {
             {name = "Qwen3 0.6B", id = "koboldcpp/Qwen3-0.6B", family = "koboldcpp"},
+            {name = "Qwen3 1.7B", id = "koboldcpp/Qwen3-1.7B", family = "koboldcpp"},
+            {name = "Qwen3 14B", id = "koboldcpp/Qwen3-14B", family = "koboldcpp"},
+            {name = "Qwen3.5 4B", id = "koboldcpp/Qwen3.5-4B", family = "koboldcpp"},
+            {name = "Qwen3.8 Flash Next", id = "autotrust/Qwen3.8-Flash-Next-E384-FP4-V2", family = "autotrust"},
+            {name = "Vesper 26B A4B (fast)", id = "koboldcpp/debug-Vesper-26B-A4B-Nocturne.i1-Q4_K_M_hb16", family = "koboldcpp"},
             {name = "Cydonia 24B v4zg", id = "koboldcpp/Cydonia-24B-v4zg-Q4_K_M", family = "koboldcpp"},
             {name = "Behemoth 128B v3", id = "aphrodite/TheDrummer/Behemoth-128B-v3", family = "aphrodite"},
             {name = "Gemma 4 Dark Orthia 31B", id = "Nimbz/Gemma-4-Dark-Orthia-31B", family = "Nimbz"},
-            {name = "Wicked Tutu 31B Final", id = "ReadyArt/Wicked-Tutu-31B-Final", family = "ReadyArt"},
-            {name = "L3 8B Stheno v3.2 Q4_K_S", id = "koboldcpp/L3-8B-Stheno-v3.2-Q4_K_S", family = "koboldcpp"},
+            {name = "Gemma 4 E4B IT", id = "koboldcpp/gemma-4-E4B-it", family = "koboldcpp"},
+            {name = "Gemma 4 E4B IT Ultra Uncensored Heretic", id = "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic", family = "koboldcpp"},
             {name = "Gemma 4 E4B Uncensored HauhauCS Aggressive", id = "koboldcpp/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-IQ3_M", family = "koboldcpp"},
             {name = "Gemma 4 E2B Queen debug", id = "koboldcpp/debug-gemma-4-E2B-Queen-it-qat-q4_0-unquantized.i1-Q4_K_M", family = "koboldcpp"},
-            {name = "L3 8B Stheno v3.2", id = "koboldcpp/L3-8B-Stheno-v3.2", family = "koboldcpp"},
-            {name = "Qwen3 14B", id = "koboldcpp/Qwen3-14B", family = "koboldcpp"},
-            {name = "Sao10K L3 8B Stheno v3.2", id = "koboldcpp/Sao10K/L3-8B-Stheno-v3.2", family = "koboldcpp"},
-            {name = "Gemma 4 E4B IT", id = "koboldcpp/gemma-4-E4B-it", family = "koboldcpp"},
-            {name = "Qwen3 1.7B", id = "koboldcpp/Qwen3-1.7B", family = "koboldcpp"},
             {name = "Gemma 3 4B IT Q4_K_M", id = "koboldcpp/gemma-3-4b-it-Q4_K_M", family = "koboldcpp"},
-            {name = "Qwen3.5 4B", id = "koboldcpp/Qwen3.5-4B", family = "koboldcpp"},
+            {name = "L3 8B Stheno v3.2", id = "koboldcpp/L3-8B-Stheno-v3.2", family = "koboldcpp"},
+            {name = "L3 8B Stheno v3.2 Q4_K_S", id = "koboldcpp/L3-8B-Stheno-v3.2-Q4_K_S", family = "koboldcpp"},
+            {name = "Sao10K L3 8B Stheno v3.2", id = "koboldcpp/Sao10K/L3-8B-Stheno-v3.2", family = "koboldcpp"},
+            {name = "Mini Magnum 12B v1.1", id = "koboldcpp/mini-magnum-12b-v1.1", family = "koboldcpp"},
             {name = "MeroMero 26B A4B Heretic", id = "koboldcpp/G4-MeroMero-26B-A4B-it-uncensored-heretic", family = "koboldcpp"}
         }
     },
@@ -143,6 +146,34 @@ local PROVIDERS = {
         models = {
             {name = "Gemini 2.0 Flash", id = "gemini-2.0-flash", family = "Google"},
             {name = "Gemini 2.0 Flash Lite", id = "gemini-2.0-flash-lite", family = "Google"}
+        }
+    },
+    {
+        id = "cloudflare",
+        name = "Cloudflare Workers AI (Free tier)",
+        url = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1/chat/completions",
+        modelsUrl = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/models/search?task=Text%20Generation&per_page=100",
+        keyUrl = "https://dash.cloudflare.com/profile/api-tokens",
+        keyName = "Cloudflare API token",
+        freeOnly = true,
+        -- Hand-picked from Cloudflare's live catalog: only models that are
+        -- currently listed AND answer the OpenAI-compatible /ai/v1/chat/completions
+        -- endpoint. Removed/deprecated ids (llama-3.1-8b-instruct, ...-fast,
+        -- mistral-7b-instruct-v0.1, gemma-3-12b-it) were the ones returning 400/403.
+        models = {
+            {name = "Llama 3.3 70B Fast", id = "@cf/meta/llama-3.3-70b-instruct-fp8-fast", family = "Meta"},
+            {name = "Llama 4 Scout 17B", id = "@cf/meta/llama-4-scout-17b-16e-instruct", family = "Meta"},
+            {name = "Llama 3.2 3B", id = "@cf/meta/llama-3.2-3b-instruct", family = "Meta"},
+            {name = "Llama 3.2 1B", id = "@cf/meta/llama-3.2-1b-instruct", family = "Meta"},
+            {name = "Mistral Small 3.1 24B", id = "@cf/mistralai/mistral-small-3.1-24b-instruct", family = "Mistral"},
+            {name = "Gemma 4 26B A4B", id = "@cf/google/gemma-4-26b-a4b-it", family = "Google"},
+            {name = "Qwen3 30B A3B", id = "@cf/qwen/qwen3-30b-a3b-fp8", family = "Qwen"},
+            {name = "Qwen2.5 Coder 32B", id = "@cf/qwen/qwen2.5-coder-32b-instruct", family = "Qwen"},
+            {name = "Qwen 3.8 27B", id = "@cf/qwen/qwen3.8-27b", family = "Qwen"},
+            {name = "DeepSeek R1 Distill Qwen 32B", id = "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b", family = "DeepSeek"},
+            {name = "GPT-OSS 120B", id = "@cf/openai/gpt-oss-120b", family = "OpenAI"},
+            {name = "GPT-OSS 20B", id = "@cf/openai/gpt-oss-20b", family = "OpenAI"},
+            {name = "Granite 4.0 Micro", id = "@cf/ibm-granite/granite-4.0-h-micro", family = "IBM"}
         }
     }
 }
@@ -213,7 +244,9 @@ local savedLoopGrabEnabled = saved.loopGrabEnabled == true
 local history = type(saved.history) == "table" and saved.history or {}
 local playerMemory, blockedPlayers, allowedPlayers, grabbedInfo = {}, {}, {}, {}
 local permanentInfo = {}
-local gameSnapshot = type(saved.gameSnapshot) == "table" and saved.gameSnapshot or nil
+-- Game snapshots and /graball player data are session-only on purpose: they are
+-- never restored from the save file, so re-executing the script starts clean.
+local gameSnapshot = nil
 
 local function restoreMap(source, destination)
     if type(source) ~= "table" then return end
@@ -227,7 +260,6 @@ restoreMap(saved.playerMemory, playerMemory)
 restoreMap(saved.blockedPlayers, blockedPlayers)
 restoreMap(saved.allowedPlayers, allowedPlayers)
 restoreMap(saved.grabbedInfo, grabbedInfo)
-restoreMap(saved.permanentInfo, permanentInfo)
 
 local stateVersion, manualVersion = 0, 0
 local replyQueue, pendingPlayers, playerVersions = {}, {}, {}
@@ -624,28 +656,16 @@ local FREE_MODEL_IDS = {
     },
     synap = {
         ["qwen3-coder-30b"] = true
-    },
-    aihorde = {
-        ["koboldcpp/Qwen3-0.6B"] = true,
-        ["koboldcpp/Cydonia-24B-v4zg-Q4_K_M"] = true,
-        ["aphrodite/TheDrummer/Behemoth-128B-v3"] = true,
-        ["Nimbz/Gemma-4-Dark-Orthia-31B"] = true,
-        ["ReadyArt/Wicked-Tutu-31B-Final"] = true,
-        ["koboldcpp/L3-8B-Stheno-v3.2-Q4_K_S"] = true,
-        ["koboldcpp/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-IQ3_M"] = true,
-        ["koboldcpp/debug-gemma-4-E2B-Queen-it-qat-q4_0-unquantized.i1-Q4_K_M"] = true,
-        ["koboldcpp/L3-8B-Stheno-v3.2"] = true,
-        ["koboldcpp/Qwen3-14B"] = true,
-        ["koboldcpp/Sao10K/L3-8B-Stheno-v3.2"] = true,
-        ["koboldcpp/gemma-4-E4B-it"] = true,
-        ["koboldcpp/Qwen3-1.7B"] = true,
-        ["koboldcpp/gemma-3-4b-it-Q4_K_M"] = true,
-        ["koboldcpp/Qwen3.5-4B"] = true,
-        ["koboldcpp/G4-MeroMero-26B-A4B-it-uncensored-heretic"] = true
     }
 }
 
 local function isFreeModel(provider, item, id)
+    -- Every AI Horde text model is free, so accept whatever the live list returns.
+    -- Cloudflare Workers AI models are also all free within the daily allowance.
+    if provider.id == "aihorde" or provider.id == "cloudflare" then
+        return true
+    end
+
     if provider.id == "openrouter" then
         if type(id) == "string" and id:find(":free", 1, true) then
             return true
@@ -694,8 +714,134 @@ local function httpFailureHint(provider, status)
     return provider.name .. " HTTP " .. status
 end
 
+-- Cloudflare keeps the account id inside the endpoint path. Paste either
+-- "account_id:api_token" or just the API token: when only a token is given the
+-- account id is looked up once through the Cloudflare API and cached per token.
+-- Every other provider keeps its plain urls and the whole key box as the token.
+local cloudflareAccountByToken = {}
+
+local function cloudflareAccountId(token)
+    if cloudflareAccountByToken[token] then
+        return cloudflareAccountByToken[token]
+    end
+
+    if type(httpRequest) ~= "function" then
+        return nil, "HTTP support unavailable."
+    end
+
+    -- Try two endpoints that expose the account id. /accounts works when the
+    -- token may list accounts; /memberships often still answers for tokens that
+    -- are scoped to a single service. The id sits at result[1].id, or at
+    -- result[1].account.id for memberships.
+    local endpoints = {
+        "https://api.cloudflare.com/client/v4/accounts",
+        "https://api.cloudflare.com/client/v4/memberships"
+    }
+
+    local helpMessage = "Cloudflare could not read your account id from the token. "
+        .. "Paste the key as account_id:api_token instead (the account id is on "
+        .. "the Workers & Pages page of the Cloudflare dashboard)."
+    local tokenMessage = nil
+
+    for _, endpoint in ipairs(endpoints) do
+        local ok, response = pcall(function()
+            return httpRequest({
+                Url = endpoint,
+                Method = "GET",
+                Headers = {
+                    ["Authorization"] = "Bearer " .. token,
+                    ["Accept"] = "application/json"
+                }
+            })
+        end)
+
+        if ok and type(response) == "table" then
+            local decoded, data = pcall(function()
+                return HttpService:JSONDecode(response.Body or "")
+            end)
+
+            if decoded and type(data) == "table" then
+                local first = type(data.result) == "table" and data.result[1]
+                local id = type(first) == "table" and first.id or nil
+
+                if not id and type(first) == "table"
+                    and type(first.account) == "table" then
+                    id = first.account.id
+                end
+
+                if id then
+                    cloudflareAccountByToken[token] = tostring(id)
+                    return tostring(id)
+                end
+
+                if type(data.errors) == "table" and type(data.errors[1]) == "table"
+                    and data.errors[1].message then
+                    local message = tostring(data.errors[1].message)
+                    local lower = message:lower()
+                    -- Only surface it when the token itself is the problem;
+                    -- a scoped-but-valid token just can't list accounts.
+                    if lower:find("invalid", 1, true)
+                        or lower:find("authoriz", 1, true)
+                        or lower:find("permission", 1, true) then
+                        tokenMessage = message
+                    end
+                end
+            end
+        end
+    end
+
+    return nil, tokenMessage or helpMessage
+end
+
+local function providerEndpoints(provider)
+    local raw = keyBox.Text:gsub("%s", "")
+
+    if provider.id == "cloudflare" then
+        local accountId, token = raw:match("^([^:]+):(.+)$")
+
+        if not accountId then
+            -- Only a token was pasted; work out the account id automatically.
+            token = raw
+            local found, lookupError = cloudflareAccountId(token)
+            if not found then
+                return nil, nil, nil, lookupError
+            end
+            accountId = found
+        end
+
+        return provider.url:gsub("{account_id}", accountId),
+            provider.modelsUrl:gsub("{account_id}", accountId),
+            token
+    end
+
+    return provider.url, provider.modelsUrl, raw
+end
+
+-- AI Horde reports, per model, how many jobs are queued and how many workers
+-- serve it. A model with little queue per worker, and few active parameters
+-- (MoE ids such as "...-A4B-..." only run the "A" slice), answers first. The
+-- top-ranked model is listed first and therefore picked by default.
+local function aiHordeSpeedRank(model)
+    local id = model.id:lower()
+
+    local params = tonumber(id:match("[%-_][a](%d+%.?%d*)[b]"))
+        or tonumber(id:match("[%-_][e](%d+%.?%d*)[b]"))
+        or tonumber(id:match("[%-_](%d+%.?%d*)[b]"))
+        or 999
+
+    local queued = tonumber(model.queued) or 0
+    local workers = tonumber(model.workers) or 0
+    local queuePerWorker = workers > 0 and (queued / workers) or (queued + 1)
+
+    return queuePerWorker, params
+end
+
 local function fetchProviderModels(provider)
-    if provider.id == "groq" then
+    -- Groq's free tier is a fixed short list. Cloudflare's live catalog also
+    -- mixes in deprecated, LoRA and third-party models that answer 400/403 on
+    -- the OpenAI-compatible endpoint, so we ship a hand-picked list of free
+    -- models that actually work instead of fetching the whole catalog.
+    if provider.id == "groq" or provider.id == "cloudflare" then
         return provider.models
     end
 
@@ -708,12 +854,17 @@ local function fetchProviderModels(provider)
         return nil, "Enter your " .. provider.keyName .. " first."
     end
 
+    local _, modelsUrl, token, endpointError = providerEndpoints(provider)
+    if not modelsUrl then
+        return nil, endpointError
+    end
+
     local ok, response = pcall(function()
         return httpRequest({
-            Url = provider.modelsUrl,
+            Url = modelsUrl,
             Method = "GET",
             Headers = {
-                ["Authorization"] = "Bearer " .. key,
+                ["Authorization"] = "Bearer " .. token,
                 ["Accept"] = "application/json"
             }
         })
@@ -733,11 +884,17 @@ local function fetchProviderModels(provider)
         if decoded and type(data) == "table" and type(data.error) == "table"
             and data.error.message then
             message = tostring(data.error.message)
+        elseif decoded and type(data) == "table" and type(data.errors) == "table"
+            and type(data.errors[1]) == "table" and data.errors[1].message then
+            message = tostring(data.errors[1].message)
         end
         return nil, message
     end
 
+    -- OpenAI-compatible providers put the list in "data"; Cloudflare's native
+    -- model-search endpoint wraps it in "result" instead.
     local items = data.data
+    if type(items) ~= "table" then items = data.result end
     if type(items) ~= "table" then
         return nil, "Provider did not return a model list."
     end
@@ -745,13 +902,48 @@ local function fetchProviderModels(provider)
     local models = {}
     for _, item in ipairs(items) do
         local id = type(item) == "table" and item.id or nil
-        if type(id) == "string" and id ~= ""
+
+        -- Cloudflare's catalog puts a UUID in "id" and the real callable model
+        -- name ("@cf/...") in "name", so prefer whichever field is an @cf id.
+        if provider.id == "cloudflare" and type(item) == "table" then
+            for _, key in ipairs({"name", "id", "model", "model_name"}) do
+                local candidate = item[key]
+                if type(candidate) == "string"
+                    and candidate:find("@cf/", 1, true) then
+                    id = candidate
+                    break
+                end
+            end
+        end
+
+        -- Cloudflare's live list may tag each model with a task. Skip anything
+        -- that is clearly not a chat/text model (image, audio, embeddings...).
+        local nonChat = false
+        if provider.id == "cloudflare" and type(item) == "table" then
+            local task = item.task
+            if type(task) == "table" then task = task.name end
+            if type(task) == "string" then
+                local lower = task:lower()
+                if lower:find("embedding", 1, true) or lower:find("image", 1, true)
+                    or lower:find("speech", 1, true) or lower:find("audio", 1, true)
+                    or lower:find("classification", 1, true)
+                    or lower:find("text-to", 1, true) then
+                    nonChat = true
+                end
+            end
+        end
+
+        if type(id) == "string" and id ~= "" and not nonChat
             and (not FREE_ONLY or isFreeModel(provider, item, id)) then
-            local family = id:match("^([^/]+)") or "Models"
+            local family = id:match("^@cf/([^/]+)/") or id:match("^([^/]+)") or "Models"
+            local horde = type(item) == "table" and item.x_horde
+            horde = type(horde) == "table" and horde or nil
             models[#models + 1] = {
                 name = id,
                 id = id,
-                family = family
+                family = family,
+                queued = horde and tonumber(horde.queued) or nil,
+                workers = horde and tonumber(horde.workers) or nil
             }
         end
     end
@@ -760,9 +952,41 @@ local function fetchProviderModels(provider)
         return nil, "No free models were returned for this provider."
     end
 
-    table.sort(models, function(a, b)
-        return a.id:lower() < b.id:lower()
-    end)
+    if provider.id == "aihorde" then
+        -- Rank every model once, then keep families together (the model menu
+        -- prints a header per family) while putting the family with the
+        -- fastest model first and the fastest model inside each family first.
+        local rank = {}
+        local familyBest = {}
+        for _, model in ipairs(models) do
+            local queue, params = aiHordeSpeedRank(model)
+            rank[model] = { queue, params }
+
+            local best = familyBest[model.family]
+            if not best or queue < best[1]
+                or (queue == best[1] and params < best[2]) then
+                familyBest[model.family] = { queue, params }
+            end
+        end
+
+        table.sort(models, function(a, b)
+            if a.family ~= b.family then
+                local bestA, bestB = familyBest[a.family], familyBest[b.family]
+                if bestA[1] ~= bestB[1] then return bestA[1] < bestB[1] end
+                if bestA[2] ~= bestB[2] then return bestA[2] < bestB[2] end
+                return a.family < b.family
+            end
+
+            local rankA, rankB = rank[a], rank[b]
+            if rankA[1] ~= rankB[1] then return rankA[1] < rankB[1] end
+            if rankA[2] ~= rankB[2] then return rankA[2] < rankB[2] end
+            return a.id:lower() < b.id:lower()
+        end)
+    else
+        table.sort(models, function(a, b)
+            return a.id:lower() < b.id:lower()
+        end)
+    end
 
     return models
 end
@@ -818,6 +1042,16 @@ local function refreshProviderMenu()
             else
                 addMessage("PROVIDER", "Paste your " .. provider.keyName .. ", then click PROVIDERS again.", ORANGE)
             end
+
+            if provider.id == "cloudflare" then
+                addMessage("PROVIDER", "Cloudflare: paste your API token. The account id "
+                    .. "is detected automatically; if that fails, paste it as "
+                    .. "account_id:api_token.", ORANGE)
+                addMessage("PROVIDER", "Only hand-picked free Cloudflare models that "
+                    .. "work on the free tier are listed; if one is rejected the "
+                    .. "script falls back to the next.", ORANGE)
+            end
+
             addMessage("PROVIDER", "Fetching free models...", BLUE)
 
             local models, modelsError = fetchProviderModels(provider)
@@ -1073,22 +1307,26 @@ local function publish(text, prefix, validator)
     return sent
 end
 
-local function callProvider(messages, maxTokens)
+local function callProviderModel(messages, maxTokens, model)
     if type(httpRequest) ~= "function" then
         return nil, "HTTP support unavailable."
     end
 
     local provider = PROVIDERS[selectedProvider]
-    local model = provider.models[selectedModel]
 
-    local key = keyBox.Text:gsub("%s", "")
-    if provider.requiresKey ~= false and key == "" then
+    local raw = keyBox.Text:gsub("%s", "")
+    if provider.requiresKey ~= false and raw == "" then
         return nil, "Enter your " .. provider.keyName .. "."
     end
 
+    local chatUrl, _, token, endpointError = providerEndpoints(provider)
+    if not chatUrl then
+        return nil, endpointError
+    end
+
     local headers = { ["Content-Type"] = "application/json" }
-    if key ~= "" then
-        headers["Authorization"] = "Bearer " .. key
+    if token ~= "" then
+        headers["Authorization"] = "Bearer " .. token
     end
 
     local body = HttpService:JSONEncode({
@@ -1103,7 +1341,7 @@ local function callProvider(messages, maxTokens)
     for attempt = 1, 2 do
         local ok, response = pcall(function()
             return httpRequest({
-                Url = provider.url,
+                Url = chatUrl,
                 Method = "POST",
                 Headers = headers,
                 Body = body
@@ -1121,7 +1359,17 @@ local function callProvider(messages, maxTokens)
                 and status >= 200 and status < 300 then
 
                 local choice = type(data.choices) == "table" and data.choices[1]
-                local content = choice and choice.message and choice.message.content
+                local message = choice and choice.message
+                local content = message and message.content
+
+                -- Reasoning models (DeepSeek R1, QwQ, GPT-OSS) can leave
+                -- content empty and put the answer in reasoning_content.
+                if type(content) ~= "string" or trim(content) == "" then
+                    content = message and message.reasoning_content
+                end
+                if type(content) ~= "string" or trim(content) == "" then
+                    content = data.response
+                end
 
                 if type(content) ~= "string" or trim(content) == "" then
                     return nil, "Model returned no text. Try another model."
@@ -1134,12 +1382,26 @@ local function callProvider(messages, maxTokens)
                 and type(data.error) == "table"
                 and data.error.message then
                 lastError = model.id .. ": " .. tostring(data.error.message)
+            elseif decoded and type(data) == "table"
+                and type(data.errors) == "table"
+                and type(data.errors[1]) == "table"
+                and data.errors[1].message then
+                -- Cloudflare reports its failures in errors[1].message.
+                lastError = model.id .. ": " .. tostring(data.errors[1].message)
             else
                 lastError = model.id .. ": " .. httpFailureHint(provider, status)
             end
 
+            if provider.id == "cloudflare" and status == 403 then
+                lastError = lastError
+                    .. " (this model is not on your Cloudflare plan/token - pick another)"
+            elseif provider.id == "cloudflare" and status == 400 then
+                lastError = lastError
+                    .. " (this model does not support the chat endpoint - pick another)"
+            end
+
             if status ~= 429 and status < 500 then
-                return nil, lastError
+                return nil, lastError, (status == 400 or status == 403)
             end
         else
             lastError = httpFailureHint(provider, 0)
@@ -1148,6 +1410,37 @@ local function callProvider(messages, maxTokens)
         if attempt < 2 and session.alive then
             task.wait(1.5)
         end
+    end
+
+    return nil, lastError, false
+end
+
+-- Cloudflare still ships models that answer 400/403 on the chat endpoint, so
+-- when the selected model is rejected, quietly try the next couple in the list
+-- instead of failing the whole request. Every other provider only tries the one
+-- model the user picked.
+local function callProvider(messages, maxTokens)
+    local provider = PROVIDERS[selectedProvider]
+    local model = provider.models[selectedModel]
+    if not model then
+        return nil, "No model selected."
+    end
+
+    local candidates = {model}
+    if provider.id == "cloudflare" and #provider.models > 1 then
+        for offset = 1, math.min(2, #provider.models - 1) do
+            candidates[#candidates + 1] =
+                provider.models[((selectedModel - 1 + offset) % #provider.models) + 1]
+        end
+    end
+
+    local lastError
+    for _, candidate in ipairs(candidates) do
+        local text, err, rejected = callProviderModel(messages, maxTokens, candidate)
+        if text then return text end
+        lastError = err
+        -- Only a rejected model (400/403) is worth retrying with another one.
+        if not rejected then break end
     end
 
     return nil, lastError
@@ -1617,7 +1910,7 @@ if savedLoopGrabEnabled then
 end
 
 --==================================================
--- PERMANENT STORE (survives MEM + re-execute)
+-- SESSION STORE (survives MEM, cleared when the script is re-executed)
 --==================================================
 local function buildChatSnapshot()
     local messages = {}
@@ -1647,35 +1940,34 @@ local function stringKeys(map)
 end
 
 local function persistState()
-    if type(writefile) ~= "function" then return false, "writefile unavailable." end
     apiKeys[PROVIDERS[selectedProvider].id] = keyBox.Text:gsub("%s", "")
+    local payload = {
+        version = 18,
+        apiKey = keyBox.Text:gsub("%s", ""),
+        apiKeys = apiKeys,
+        personality = personalityBox.Text,
+        selectedProvider = selectedProvider,
+        selectedProviderId = PROVIDERS[selectedProvider].id,
+        selectedModel = selectedModel,
+        selectedModelId = PROVIDERS[selectedProvider].models[selectedModel].id,
+        radius = radius,
+        autoSpeak = autoSpeak,
+        testMode = testMode,
+        circleVisible = circleVisible,
+        restrictToAllowed = restrictToAllowed,
+        noCooldown = noCooldown,
+        allowCommands = allowCommands,
+        loopGrabEnabled = loopGrabEnabled,
+        history = history,
+        playerMemory = stringKeys(playerMemory),
+        blockedPlayers = stringKeys(blockedPlayers),
+        allowedPlayers = stringKeys(allowedPlayers),
+        grabbedInfo = stringKeys(grabbedInfo),
+        chatMessages = buildChatSnapshot()
+    }
+    if type(writefile) ~= "function" then return false, "writefile unavailable." end
     local ok, result = pcall(function()
-        writefile(SAVE_FILE, HttpService:JSONEncode({
-            version = 18,
-            apiKey = keyBox.Text:gsub("%s", ""),
-            apiKeys = apiKeys,
-            personality = personalityBox.Text,
-            selectedProvider = selectedProvider,
-            selectedProviderId = PROVIDERS[selectedProvider].id,
-            selectedModel = selectedModel,
-            selectedModelId = PROVIDERS[selectedProvider].models[selectedModel].id,
-            radius = radius,
-            autoSpeak = autoSpeak,
-            testMode = testMode,
-            circleVisible = circleVisible,
-            restrictToAllowed = restrictToAllowed,
-            noCooldown = noCooldown,
-            allowCommands = allowCommands,
-            loopGrabEnabled = loopGrabEnabled,
-            gameSnapshot = gameSnapshot,
-            history = history,
-            playerMemory = stringKeys(playerMemory),
-            blockedPlayers = stringKeys(blockedPlayers),
-            allowedPlayers = stringKeys(allowedPlayers),
-            grabbedInfo = stringKeys(grabbedInfo),
-            permanentInfo = stringKeys(permanentInfo),
-            chatMessages = buildChatSnapshot()
-        }))
+        writefile(SAVE_FILE, HttpService:JSONEncode(payload))
     end)
     if ok then return true end
     return false, tostring(result)
@@ -2079,11 +2371,9 @@ local function handleCommand(message)
             if command == "grabgame" then
                 addMessage("GRABGAME", "Scanning the game explorer...", BLUE)
                 local snapshot = grabGame()
-                local savedOk = persistState()
                 addMessage("GRABGAME", "Stored " .. snapshot.nodes .. " nodes from "
-                    .. snapshot.placeName .. " (PlaceId " .. snapshot.placeId .. ")."
-                    .. (savedOk and " Auto-saved, survives MEM and re-execute."
-                        or " Kept in memory (file save failed)."), GREEN)
+                    .. snapshot.placeName .. " (PlaceId " .. snapshot.placeId .. "). "
+                    .. "Session only - cleared when the script is re-executed.", GREEN)
                 reply("Game snapshot saved (" .. snapshot.nodes
                     .. " nodes). Ask me about the game, /rategame or /quizgame.")
                 return
@@ -2111,16 +2401,12 @@ local function handleCommand(message)
                         addMessage("GRABALL", "Could not read @" .. target.Name, ORANGE)
                     end
                 end
-                local savedOk, saveErr = persistState()
                 addMessage("GRABALL", "Done: game snapshot + " .. collected
-                    .. " player(s) stored permanently"
+                    .. " player(s) stored for this session"
                     .. (failed > 0 and (" (" .. failed .. " failed)") or "") .. ".",
                     GREEN)
-                addMessage("GRABALL", savedOk
-                    and "Saved to " .. SAVE_FILE .. ". MEM will NOT wipe this; "
-                        .. "only /cleargraball clears it."
-                    or ("Kept in memory, but the file save failed: " .. tostring(saveErr)),
-                    savedOk and GREEN or ORANGE)
+                addMessage("GRABALL", "MEM will NOT wipe this; only /cleargraball "
+                    .. "clears it. Re-executing the script starts clean.", ORANGE)
                 return
             end
 
@@ -2130,11 +2416,8 @@ local function handleCommand(message)
                     return
                 end
                 permanentInfo = {}
-                local savedOk = persistState()
-                addMessage("GRABALL", savedOk
-                    and "Permanent game + player grabs cleared and the save file updated."
-                    or "Permanent grabs cleared in memory. Save file was not updated.",
-                    ORANGE)
+                gameSnapshot = nil
+                addMessage("GRABALL", "Permanent game + player grabs cleared.", ORANGE)
                 return
             end
 
@@ -2856,8 +3139,8 @@ connect(memoryButton.MouseButton1Click, function()
                 .. "use /unloopgrab or /unloopgrabinfo to stop it. "
             or "AI memories and grabbed info cleared. ")
             .. (next(permanentInfo) ~= nil
-                and "Permanent /graball data kept (only /cleargraball wipes it). "
-                or "No permanent /graball data stored. ")
+                and "/graball data kept (only /cleargraball wipes it). "
+                or "No /graball data stored. ")
             .. (gameSnapshot
                 and "Game snapshot kept (use /grabgame to refresh it)."
                 or "No game snapshot stored."), ORANGE)
@@ -2866,8 +3149,8 @@ end)
 connect(saveButton.MouseButton1Click, function()
     local ok, err = persistState()
     addMessage(ok and "SYSTEM" or "ERROR",
-        ok and "Saved all provider API keys, model, settings, memories, game snapshot "
-            .. "and permanent grabs."
+        ok and "Saved all provider API keys, model, settings, memories and access "
+            .. "lists. Game snapshots and /graball data are session-only."
             or tostring(err), ok and GREEN or RED)
     if ok then
         saveButton.Text = "SAVED!"
@@ -2964,15 +3247,15 @@ end)
 -- STARTUP
 --==================================================
 addMessage("SYSTEM", "PRIVATE AI v20.1 loaded - FREE MODELS ONLY.", GREEN)
-addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, AI Horde, Synap, Google AI Studio.", BLUE)
+addMessage("SYSTEM", "Providers: Groq, OpenRouter, Cohere, AI Horde, Synap, Google AI Studio, Cloudflare.", BLUE)
 addMessage("SYSTEM", "Click PROVIDERS: it copies the API-key signup page, not your API key.", BLUE)
 addMessage("SYSTEM", "Paste your key, then click the provider again to load its free models.", BLUE)
 addMessage("SYSTEM",
-    "/graball grabs the game + every player and stores it PERMANENTLY "
-        .. "(survives MEM and re-execute). /cleargraball wipes it.", BLUE)
+    "/graball grabs the game + every player for this session "
+        .. "(survives MEM; cleared on re-execute). /cleargraball wipes it.", BLUE)
 addMessage("SYSTEM",
-    "/grabgame stores the explorer dump (kept after MEM, auto-saved). "
-        .. "/rategame rates it, /quizgame [topic] quizzes on it.", BLUE)
+    "/grabgame stores the explorer dump for this session (kept after MEM, "
+        .. "cleared on re-execute). /rategame rates it, /quizgame [topic] quizzes on it.", BLUE)
 addMessage("SYSTEM",
     "/rateavatar (player) or /rateava (player) rates an avatar 1-10. "
         .. "/badrate (player) roasts it 1-3, /goodrate (player) praises it 8-10.", GREEN)
