@@ -292,6 +292,11 @@ local ttsEnabled = saved.ttsEnabled ~= false
 local ttsVoiceIndex = math.clamp(math.floor(tonumber(saved.ttsVoiceIndex) or 2), 1, 31)
 -- Privacy mode: hides the API key on screen without touching its real value.
 local privacyMode = saved.privacyMode == true
+-- CHAT ALL: when on, the AI replies to every non-blocked player's message in the
+-- server, ignoring the circle and allow rules (and even with AUTO off). Stored on
+-- the existing "session" table, not as a new top-level local, because this
+-- script's main chunk sits right at Luau's 200-register ceiling.
+session.chatAll = saved.chatAll == true
 local commandAccessVersion = 0
 local savedLoopGrabEnabled = saved.loopGrabEnabled == true
 local history = type(saved.history) == "table" and saved.history or {}
@@ -509,7 +514,9 @@ local restrictButton = button("ONLY ALLOWED", 12, 314, 110, GRAY)
 restrictButton.TextSize = 9
 local allowCmdButton = button("ALLOW CMD: OFF", 128, 314, 84, GRAY)
 allowCmdButton.TextSize = 9
-local quizTopicBox = textBox(312, "Quiz topic, e.g. Minecraft", "", 220, 300)
+session.chatAllButton = button("CHAT ALL: OFF", 218, 314, 86, GRAY)
+session.chatAllButton.TextSize = 9
+local quizTopicBox = textBox(312, "Quiz topic, e.g. Minecraft", "", 310, 218)
 local quizButton = button("START QUIZ", 528, 314, 110, Color3.fromRGB(105, 85, 175))
 
 local chat = create("ScrollingFrame", {
@@ -696,6 +703,8 @@ local function refreshButtons()
     nocdButton.BackgroundColor3 = noCooldown and RED or GRAY
     allowCmdButton.Text = allowCommands and "ALLOW CMD: ON" or "ALLOW CMD: OFF"
     allowCmdButton.BackgroundColor3 = allowCommands and GREEN or GRAY
+    session.chatAllButton.Text = session.chatAll and "CHAT ALL: ON" or "CHAT ALL: OFF"
+    session.chatAllButton.BackgroundColor3 = session.chatAll and GREEN or GRAY
     ttsButton.Text = ttsEnabled and "TTS: ON" or "TTS: OFF"
     ttsButton.BackgroundColor3 = ttsEnabled and GREEN or GRAY
     voiceButton.Text = "VOICE: "
@@ -1753,17 +1762,23 @@ end
 local function canInteract(target)
     if target == player then return true end
     if blockedPlayers[target.UserId] then return false end
+    -- CHAT ALL: talk to every non-blocked player in the server, circle or not.
+    if session.chatAll then return true end
     if allowedPlayers[target.UserId] then return true end
     if restrictToAllowed then return false end
     return insideCircle(target)
 end
 
 -- Commands bypass the circle: ALLOW CMD ON = every non-blocked player, anywhere.
+-- CHAT ALL deliberately does NOT widen command access (blocked players stay
+-- blocked, and strangers still need ALLOW CMD or to be inside the circle).
 local function canCommand(target)
     if target == player then return true end
     if blockedPlayers[target.UserId] then return false end
     if allowCommands then return true end
-    return canInteract(target)
+    if allowedPlayers[target.UserId] then return true end
+    if restrictToAllowed then return false end
+    return insideCircle(target)
 end
 
 local function validJob(job)
@@ -2740,6 +2755,7 @@ local function persistState()
         ttsEnabled = ttsEnabled,
         ttsVoiceIndex = ttsVoiceIndex,
         privacyMode = privacyMode,
+        chatAll = session.chatAll,
         loopGrabEnabled = loopGrabEnabled,
         history = history,
         playerMemory = stringKeys(playerMemory),
@@ -3757,7 +3773,9 @@ connect(TextChatService.MessageReceived, function(message)
     end
 
     if handleQuizAnswer(source.UserId, text) then return end
-    if not autoSpeak or source.UserId == player.UserId then return end
+    -- CHAT ALL makes the AI answer every message even with AUTO off; otherwise
+    -- replies need AUTO on.
+    if (not autoSpeak and not session.chatAll) or source.UserId == player.UserId then return end
 
     local speaker = Players:GetPlayerByUserId(source.UserId)
     if not speaker or not canInteract(speaker) or #text > 2000 then return end
@@ -3851,6 +3869,19 @@ connect(autoButton.MouseButton1Click, function()
     autoSpeak = not autoSpeak
     invalidateReplies()
     refreshButtons()
+end)
+
+connect(session.chatAllButton.MouseButton1Click, function()
+    session.chatAll = not session.chatAll
+    invalidateReplies()
+    refreshButtons()
+    addMessage("SYSTEM", session.chatAll
+        and "CHAT ALL ON: the AI now replies to every player's message in the "
+            .. "server, ignoring the circle and allow rules (works even with "
+            .. "AUTO off). Blocked players are still ignored. Commands are not "
+            .. "affected (use ALLOW CMD for that)."
+        or "CHAT ALL OFF: replies follow the normal circle and allow rules again.",
+        session.chatAll and GREEN or ORANGE)
 end)
 
 connect(ttsButton.MouseButton1Click, function()
@@ -4155,6 +4186,10 @@ addMessage("SYSTEM",
 addMessage("SYSTEM",
     "ALLOW CMD ON: every non-blocked player can use commands anywhere, "
         .. "even with AUTO off. OFF: circle/allowed rules apply.", ORANGE)
+addMessage("SYSTEM",
+    "CHAT ALL: ON makes the AI reply to every player's message in the server, "
+        .. "ignoring the circle and allow rules (works even with AUTO off). "
+        .. "Blocked players are still ignored. Saved by SAVE.", GREEN)
 addMessage("SYSTEM",
     "/help /cmds /commands post the command list in chat. "
         .. "/silentcmd /silentcmds show it privately here.", BLUE)
