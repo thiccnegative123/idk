@@ -231,11 +231,14 @@ local QUIZ_SECONDS = 30
 local TRIVIA_SECONDS = 20
 local GLOBAL_SEND_GAP = 1.5
 local MAX_QUEUE = 12
-local GAME_MAX_NODES = 350
-local GAME_MAX_DEPTH = 6
-local GAME_MAX_CHARS = 9000
-local GAME_CHAT_LIMIT = 3000
-local GAME_QUIZ_LIMIT = 5000
+local GAME_MAX_NODES = 2500
+local GAME_MAX_DEPTH = 12
+local GAME_MAX_CHARS = 50000
+-- How much of the snapshot is handed to the AI. The important-objects section
+-- (weapons, tools, keys, vehicles, pickups) is printed FIRST, so trimming at
+-- this limit can no longer hide the guns at the end of a big explorer dump.
+local GAME_CHAT_LIMIT = 14000
+local GAME_QUIZ_LIMIT = 20000
 local GAME_ROOTS = {
     "Workspace", "Players", "ReplicatedStorage", "Lighting", "StarterGui",
     "StarterPack", "ServerStorage", "ServerScriptService", "Teams",
@@ -2403,6 +2406,19 @@ local function describeInstance(inst)
         bits[#bits + 1] = "pos " .. round1(pos.X) .. ","
             .. round1(pos.Y) .. "," .. round1(pos.Z)
     end
+    -- Material and colour make parts identifiable: a metal "Barrel" beside a
+    -- "Grip" is far more useful to the AI than an anonymous Part.
+    local okMat, mat = pcall(function() return inst.Material end)
+    if okMat and mat ~= nil then
+        bits[#bits + 1] = "material " .. tostring(mat):gsub("Enum.Material%.", "")
+    end
+    local okColor, color = pcall(function() return inst.Color end)
+    if okColor and typeof(color) == "Color3" then
+        bits[#bits + 1] = string.format("color #%02X%02X%02X",
+            math.floor(color.R * 255 + 0.5),
+            math.floor(color.G * 255 + 0.5),
+            math.floor(color.B * 255 + 0.5))
+    end
     if inst:IsA("MeshPart") then
         local id = tostring(inst.MeshId):match("%d+")
         if id then bits[#bits + 1] = "mesh " .. id end
@@ -2421,7 +2437,14 @@ local function describeInstance(inst)
             bits[#bits + 1] = #src .. " chars of code"
         end
     elseif inst:IsA("Tool") then
-        bits[#bits + 1] = "tool"
+        -- A gun is a Tool whose children are named Handle, Barrel, Trigger,
+        -- etc. Listing those child names tells the AI what the tool actually is.
+        local parts = {}
+        for _, child in ipairs(inst:GetChildren()) do
+            if #parts < 12 then parts[#parts + 1] = child.Name end
+        end
+        bits[#bits + 1] = #parts > 0
+            and ("tool parts: " .. table.concat(parts, ", ")) or "tool"
     elseif inst:IsA("PointLight") or inst:IsA("SpotLight") or inst:IsA("SurfaceLight") then
         bits[#bits + 1] = "light"
     elseif inst:IsA("ParticleEmitter") then
@@ -2431,44 +2454,255 @@ local function describeInstance(inst)
 end
 
 local function collectGameSnapshot()
-    local lines, nodes, chars = {}, 0, 0
+    local lines, notables, remotes, teams = {}, {}, {}, {}
+    local nodes, chars, visited, notableCount, remoteVisited = 0, 0, 0, 0, 0
+    local seen, seenRemote = {}, {}
+    -- A remote name is only useful to the AI when it describes an action.
+    -- Hashes, UUIDs and other random names are skipped so they cannot drown
+    -- out the real remotes (FireGun, BuyItem, SaveData, ...).
+    local REMOTE_HINT = {
+        "remote", "event", "function", "callback", "request", "response",
+        "fire", "shoot", "gun", "weapon", "damage", "hurt", "hit", "attack",
+        "health", "heal", "coin", "cash", "money", "buy", "sell", "shop",
+        "purchase", "inventory", "item", "equip", "drop", "pickup", "give",
+        "take", "save", "load", "data", "leader", "stat", "rank", "team",
+        "chat", "say", "message", "teleport", "spawn", "respawn", "kill",
+        "death", "vote", "admin", "command", "reward", "daily", "gift",
+        "trade", "player", "character", "effect", "sound", "animation",
+        "emote", "settings", "config", "update", "sync", "check", "validate",
+        "server", "client", "security", "key", "auth", "login"
+    }
+
+    local function readableRemote(name)
+        if type(name) ~= "string" then return false end
+        local lower = name:lower()
+        if #lower < 4 or #lower > 80 then return false end
+        -- Pure hex strings (a3f8c2, deadbeef) and UUID-style names are random.
+        if lower:match("^%x+$") and #lower >= 8 then return false end
+        if lower:match("^%x+%-%x+") then return false end
+        local letters = select(2, lower:gsub("%a", ""))
+        local digits = select(2, lower:gsub("%d", ""))
+        if letters < 4 or digits > letters then return false end
+        if not lower:match("%a%a%a") then return false end
+        for _, word in ipairs(REMOTE_HINT) do
+            if lower:find(word, 1, true) then return true end
+        end
+        return false
+    end
+
+    local function addRemote(inst, path)
+        if #remotes >= 150 or seenRemote[inst] then return end
+        seenRemote[inst] = true
+        if not readableRemote(inst.Name) then return end
+        remotes[#remotes + 1] = "  " .. path .. " > " .. inst.ClassName
+            .. " " .. inst.Name
+    end
+
+    -- ReplicatedStorage is the main home of client/server remotes, but the
+    -- same pattern is used in ReplicatedFirst and StarterGui. Randomly named
+    -- ones are ignored by readableRemote above.
+    local function scanRemotes(inst, path, depth)
+        if not inst or depth > 10 or remoteVisited >= 5000
+            or #remotes >= 150 then return end
+        remoteVisited = remoteVisited + 1
+        if inst.ClassName == "RemoteEvent" or inst.ClassName == "RemoteFunction"
+            or inst.ClassName == "UnreliableRemoteEvent" then
+            addRemote(inst, path)
+        end
+        for _, child in ipairs(inst:GetChildren()) do
+            scanRemotes(child, path .. " > " .. child.Name, depth + 1)
+        end
+    end
+
+    -- Teams service: names, colours and the players currently on each team.
+    local function collectTeams()
+        local teamService = game:FindFirstChild("Teams")
+        if not teamService then return end
+        local membersByTeam, unassigned = {}, {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            local okTeam, pTeam = pcall(function() return p.Team end)
+            if okTeam and pTeam then
+                local list = membersByTeam[pTeam]
+                if not list then
+                    list = {}
+                    membersByTeam[pTeam] = list
+                end
+                list[#list + 1] = p.Name
+            elseif okTeam then
+                unassigned[#unassigned + 1] = p.Name
+            end
+        end
+        for _, team in ipairs(teamService:GetChildren()) do
+            if team:IsA("Team") then
+                local members = membersByTeam[team] or {}
+                local hex = "?"
+                local okColor, color = pcall(function() return team.TeamColor.Color end)
+                if okColor and typeof(color) == "Color3" then
+                    hex = string.format("#%02X%02X%02X",
+                        math.floor(color.R * 255 + 0.5),
+                        math.floor(color.G * 255 + 0.5),
+                        math.floor(color.B * 255 + 0.5))
+                end
+                teams[#teams + 1] = "  " .. team.Name
+                    .. " | TeamColor " .. tostring(team.TeamColor) .. " (" .. hex .. ")"
+                    .. " | members: "
+                    .. (#members > 0 and table.concat(members, ", ") or "none")
+            end
+        end
+        if #unassigned > 0 then
+            teams[#teams + 1] = "  No team: " .. table.concat(unassigned, ", ")
+        end
+    end
+
+    -- Names that normally mean a weapon, item, key, vehicle or loot object.
+    -- Deliberately no generic words like "door" or "bat": in a prison game
+    -- hundreds of doors would fill the important-objects list before the guns.
+    local KEY_WORDS = {
+        "gun", "rifle", "pistol", "glock", "shotgun", "sniper", "smg", "uzi",
+        "weapon", "firearm", "ammo", "bullet", "magazine",
+        "sword", "knife", "crowbar", "grenade", "bomb",
+        "tool", "item", "keycard", "money", "cash", "coin",
+        "gold", "diamond", "drug", "loot", "crate", "safe", "chest",
+        "vehicle", "pickup", "register"
+    }
+
     local function push(text)
         lines[#lines + 1] = text
         chars = chars + #text + 1
     end
-    local function walk(inst, depth)
-        if nodes >= GAME_MAX_NODES or chars >= GAME_MAX_CHARS then return end
-        if inst.Name == "PrivateGroqAI_Circle" then return end
-        if inst == Players then
-            local names = {}
-            for _, p in ipairs(Players:GetPlayers()) do names[#names + 1] = p.Name end
-            push(string.rep("  ", depth) .. "Players online: " .. table.concat(names, ", "))
-            return
+
+    local function important(inst)
+        if inst:IsA("Tool") or inst:IsA("HopperBin") then return true end
+        local lower = inst.Name:lower()
+        for _, word in ipairs(KEY_WORDS) do
+            if lower:find(word, 1, true) then return true end
         end
-        if inst:IsA("Model") and Players:GetPlayerFromCharacter(inst) then
-            push(string.rep("  ", depth) .. "Character of " .. inst.Name)
-            return
-        end
-        nodes = nodes + 1
-        push(string.rep("  ", depth) .. describeInstance(inst))
-        if depth >= GAME_MAX_DEPTH then return end
-        local shown = 0
+        return false
+    end
+
+    local function addImportant(inst, path)
+        if notableCount >= 300 or seen[inst] then return end
+        seen[inst] = true
+        notableCount = notableCount + 1
+        notables[#notables + 1] = "  " .. path .. " > " .. describeInstance(inst)
+    end
+
+    -- Player characters and backpacks: collect important objects only, so the
+    -- explorer dump is not filled with avatar body parts. Guns a player is
+    -- holding or carrying are exactly what the old scan skipped completely.
+    local function scanImportantOnly(inst, path, depth)
+        if not inst or visited >= 25000 or depth > 10 then return end
+        visited = visited + 1
+        local here = path == "" and inst.Name or (path .. " > " .. inst.Name)
+        if important(inst) then addImportant(inst, here) end
         for _, child in ipairs(inst:GetChildren()) do
-            if nodes >= GAME_MAX_NODES or chars >= GAME_MAX_CHARS or shown >= 30 then break end
-            shown = shown + 1
-            walk(child, depth + 1)
+            scanImportantOnly(child, here, depth + 1)
         end
     end
-    local okHead, placeName = pcall(function() return game.Name end)
-    local okId, placeId = pcall(function() return game.PlaceId end)
-    push("Place: " .. tostring(okHead and placeName or "?")
-        .. " | PlaceId " .. tostring(okId and placeId or "?"))
+
+    local function walk(inst, depth, path)
+        if not inst or visited >= 25000
+            or inst.Name == "PrivateGroqAI_Circle" then return end
+        visited = visited + 1
+        local here = path == "" and inst.Name or (path .. " > " .. inst.Name)
+        -- Found important objects are stored BEFORE any budget check: even if
+        -- the general dump is full, the gun/tool list keeps growing.
+        if important(inst) then addImportant(inst, here) end
+        if inst.ClassName == "RemoteEvent" or inst.ClassName == "RemoteFunction"
+            or inst.ClassName == "UnreliableRemoteEvent" then
+            addRemote(inst, here)
+        end
+
+        if nodes < GAME_MAX_NODES and chars < GAME_MAX_CHARS then
+            if inst == Players then
+                local names = {}
+                for _, p in ipairs(Players:GetPlayers()) do names[#names + 1] = p.Name end
+                push(string.rep("  ", depth) .. "Players online: " .. table.concat(names, ", "))
+            elseif inst:IsA("Model") and Players:GetPlayerFromCharacter(inst) then
+                push(string.rep("  ", depth) .. "Character of " .. inst.Name
+                    .. " (held tools listed in IMPORTANT OBJECTS)")
+            else
+                push(string.rep("  ", depth) .. describeInstance(inst))
+            end
+            nodes = nodes + 1
+        end
+
+        -- Everything under a Player was already scanned by scanImportantOnly.
+        local parent = inst.Parent
+        local playerChild = parent and parent:IsA("Player")
+        if playerChild and (inst:IsA("Backpack") or inst:IsA("PlayerScripts")
+            or inst:IsA("PlayerGui")
+            or (inst:IsA("Model") and Players:GetPlayerFromCharacter(inst))) then
+            return
+        end
+
+        if depth >= GAME_MAX_DEPTH then
+            for _, child in ipairs(inst:GetChildren()) do
+                if important(child) then addImportant(child, here .. " > " .. child.Name) end
+            end
+            return
+        end
+
+        for _, child in ipairs(inst:GetChildren()) do
+            walk(child, depth + 1, here)
+        end
+    end
+
+    -- Guns and items are usually in a player's hands or backpack, so scan
+    -- those first and print them at the very top of the snapshot.
+    for _, p in ipairs(Players:GetPlayers()) do
+        local okChar, char = pcall(function() return p.Character end)
+        if okChar and char then
+            scanImportantOnly(char, "Players > " .. p.Name .. " > Character", 0)
+        end
+        local okBag, bag = pcall(function() return p.Backpack end)
+        if okBag and bag then
+            scanImportantOnly(bag, "Players > " .. p.Name .. " > Backpack", 0)
+        end
+    end
+
     for _, serviceName in ipairs(GAME_ROOTS) do
         local service = game:FindFirstChild(serviceName)
-        if service then walk(service, 0) end
-        if chars >= GAME_MAX_CHARS then break end
+        if service then walk(service, 0, "") end
     end
-    return table.concat(lines, "\n"), nodes
+
+    collectTeams()
+    for _, rootName in ipairs({"ReplicatedStorage", "ReplicatedFirst", "StarterGui"}) do
+        local root = game:FindFirstChild(rootName)
+        if root then scanRemotes(root, rootName, 0) end
+    end
+
+    local result = {
+        "==================================================",
+        "IMPORTANT OBJECTS (weapons, tools, items, keys, vehicles, pickups):"
+    }
+    if notableCount == 0 then
+        result[#result + 1] = "  NONE FOUND: no object in the scan had a weapon/item/tool-like name."
+    else
+        for _, line in ipairs(notables) do result[#result + 1] = line end
+    end
+
+    result[#result + 1] = "=================================================="
+    result[#result + 1] = "TEAMS (name, colour and current members):"
+    if #teams == 0 then
+        result[#result + 1] = "  No teams were found in the Teams service."
+    else
+        for _, line in ipairs(teams) do result[#result + 1] = line end
+    end
+
+    result[#result + 1] = "=================================================="
+    result[#result + 1] = "REMOTES (readable names only; random/hash names ignored):"
+    if #remotes == 0 then
+        result[#result + 1] = "  No descriptively named remotes were found."
+    else
+        for _, line in ipairs(remotes) do result[#result + 1] = line end
+    end
+
+    result[#result + 1] = "=================================================="
+    result[#result + 1] = "EXPLORER DUMP (" .. nodes .. " nodes shown, "
+        .. visited .. " objects scanned):"
+    for _, line in ipairs(lines) do result[#result + 1] = line end
+    return table.concat(result, "\n"), nodes
 end
 
 local function grabGame()
@@ -2512,7 +2746,15 @@ local function gameContext(limit)
         .. "Place: " .. tostring(gameSnapshot.placeName)
         .. " (PlaceId " .. tostring(gameSnapshot.placeId) .. ")\n"
         .. "Players online: " .. table.concat(gameSnapshot.players or {}, ", ") .. "\n"
-        .. "Explorer dump:\n" .. tree
+        .. "The IMPORTANT OBJECTS section lists REAL weapons, tools and items found "
+        .. "in the game and in players' hands/backpacks. If objects are listed there, "
+        .. "the game DOES contain them - never claim the game has no guns or items "
+        .. "when that section lists them. The TEAMS section lists the real teams and "
+        .. "their members. The REMOTES section lists descriptively named "
+        .. "client/server remotes from ReplicatedStorage and friends; use them to "
+        .. "understand what actions the game supports. Random/hash remote names were "
+        .. "deliberately skipped.\n"
+        .. tree
 end
 
 local function gameContextOrNote()
@@ -4178,8 +4420,9 @@ addMessage("SYSTEM",
     "/graball grabs the game + every player for this session "
         .. "(survives MEM; cleared on re-execute). /cleargraball wipes it.", BLUE)
 addMessage("SYSTEM",
-    "/grabgame stores the explorer dump for this session (kept after MEM, "
-        .. "cleared on re-execute). /rategame rates it, /quizgame [topic] quizzes on it.", BLUE)
+    "/grabgame stores the explorer dump, teams and readable remotes for this "
+        .. "session (kept after MEM, cleared on re-execute). /rategame rates it, "
+        .. "/quizgame [topic] quizzes on it.", BLUE)
 addMessage("SYSTEM",
     "/rateavatar (player) or /rateava (player) rates an avatar 1-10. "
         .. "/badrate (player) roasts it 1-3, /goodrate (player) praises it 8-10.", GREEN)
