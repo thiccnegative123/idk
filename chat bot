@@ -2453,6 +2453,135 @@ local function describeInstance(inst)
     return inst.Name .. " [" .. table.concat(bits, ", ") .. "]"
 end
 
+--==================================================
+-- YOUR GUIS (shown to the AI by /grabgame)
+--==================================================
+-- The explorer walk deliberately skips PlayerGui, and most executors hide their
+-- own interfaces in gethui(), so GUIs need their own pass. This lists every
+-- ScreenGui plus its buttons, labels, text boxes and layout, with the text and
+-- colours that make each element recognisable.
+-- Defined as a field on the existing "session" table rather than a new top-level
+-- local because this chunk already sits at Luau's 200-register ceiling.
+function session.collectGuiSnapshot()
+    local lines, roots = {}, {}
+
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if playerGui then roots[#roots + 1] = {"Your PlayerGui", playerGui} end
+    if type(gethui) == "function" then
+        local ok, hidden = pcall(gethui)
+        if ok and hidden then roots[#roots + 1] = {"gethui()", hidden} end
+    end
+    if type(game.GetService) == "function" then
+        local ok, core = pcall(function() return game:GetService("CoreGui") end)
+        if ok and core then roots[#roots + 1] = {"CoreGui", core} end
+    end
+    local starter = game:FindFirstChild("StarterGui")
+    if starter then roots[#roots + 1] = {"StarterGui", starter} end
+
+    local function hex(color)
+        local ok, r, g, b = pcall(function() return color.R, color.G, color.B end)
+        if not ok or type(r) ~= "number" then return "?" end
+        return string.format("#%02X%02X%02X",
+            math.floor(r * 255 + 0.5),
+            math.floor(g * 255 + 0.5),
+            math.floor(b * 255 + 0.5))
+    end
+
+    local function describeGui(inst)
+        local bits = {inst.ClassName}
+        local okVisible, visible = pcall(function() return inst.Visible end)
+        if okVisible then bits[#bits + 1] = "visible " .. tostring(visible) end
+
+        if inst:IsA("GuiObject") then
+            local okPos, pos = pcall(function() return inst.Position end)
+            if okPos then
+                bits[#bits + 1] = string.format("pos %.2f,%d %.2f,%d",
+                    pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+            end
+            local okSize, size = pcall(function() return inst.Size end)
+            if okSize then
+                bits[#bits + 1] = string.format("size %.2f,%d %.2f,%d",
+                    size.X.Scale, size.X.Offset, size.Y.Scale, size.Y.Offset)
+            end
+        end
+
+        local okBg, bg = pcall(function() return inst.BackgroundColor3 end)
+        if okBg and typeof(bg) == "Color3" then
+            local okTrans, trans = pcall(function() return inst.BackgroundTransparency end)
+            bits[#bits + 1] = "bg " .. hex(bg)
+                .. (okTrans and (" alpha " .. string.format("%.2f", tonumber(trans) or 1)) or "")
+        end
+
+        if inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox") then
+            local okText, text = pcall(function() return inst.Text end)
+            if okText then
+                text = tostring(text):gsub("[\r\n]+", " ")
+                if #text > 120 then text = text:sub(1, 117) .. "..." end
+                bits[#bits + 1] = "text \"" .. text .. "\""
+            end
+            local okColor, textColor = pcall(function() return inst.TextColor3 end)
+            if okColor and typeof(textColor) == "Color3" then
+                bits[#bits + 1] = "text color " .. hex(textColor)
+            end
+        elseif inst:IsA("ImageLabel") or inst:IsA("ImageButton") then
+            local okImage, image = pcall(function() return inst.Image end)
+            if okImage then
+                local id = tostring(image):match("%d+")
+                bits[#bits + 1] = "image " .. (id or tostring(image))
+            end
+        end
+
+        if inst:IsA("ScrollingFrame") then
+            local okCanvas, canvas = pcall(function() return inst.CanvasSize end)
+            if okCanvas then
+                bits[#bits + 1] = string.format("canvas %.2f,%d %.2f,%d",
+                    canvas.X.Scale, canvas.X.Offset, canvas.Y.Scale, canvas.Y.Offset)
+            end
+        end
+
+        if inst:IsA("ScreenGui") then
+            local okEnabled, enabled = pcall(function() return inst.Enabled end)
+            if okEnabled then bits[#bits + 1] = "enabled " .. tostring(enabled) end
+            local okReset, reset = pcall(function() return inst.ResetOnSpawn end)
+            if okReset then bits[#bits + 1] = "resetOnSpawn " .. tostring(reset) end
+        elseif inst:IsA("UIListLayout") then
+            local okPad, pad = pcall(function() return inst.Padding end)
+            if okPad then bits[#bits + 1] = "padding " .. tostring(pad) end
+        elseif inst:IsA("UICorner") then
+            local okRadius, radiusValue = pcall(function() return inst.CornerRadius end)
+            if okRadius then bits[#bits + 1] = "radius " .. tostring(radiusValue) end
+        end
+
+        return inst.Name .. " [" .. table.concat(bits, ", ") .. "]"
+    end
+
+    local scanned = 0
+    local function scan(inst, depth)
+        if not inst or scanned >= 600 or #lines >= 700 or depth > 12 then return end
+        scanned = scanned + 1
+        lines[#lines + 1] = string.rep("  ", depth + 1) .. describeGui(inst)
+        for _, child in ipairs(inst:GetChildren()) do
+            scan(child, depth + 1)
+        end
+    end
+
+    for _, entry in ipairs(roots) do
+        if #lines >= 700 then break end
+        lines[#lines + 1] = "  === " .. entry[1] .. " ==="
+        local screens = {}
+        for _, child in ipairs(entry[2]:GetChildren()) do
+            if child:IsA("ScreenGui") then screens[#screens + 1] = child end
+        end
+        if #screens == 0 then
+            lines[#lines + 1] = "    No ScreenGui found here."
+        else
+            for _, screen in ipairs(screens) do scan(screen, 1) end
+        end
+    end
+
+    return lines
+end
+
 local function collectGameSnapshot()
     local lines, notables, remotes, teams = {}, {}, {}, {}
     local nodes, chars, visited, notableCount, remoteVisited = 0, 0, 0, 0, 0
@@ -2672,6 +2801,8 @@ local function collectGameSnapshot()
         if root then scanRemotes(root, rootName, 0) end
     end
 
+    local guiLines = session.collectGuiSnapshot()
+
     local result = {
         "==================================================",
         "IMPORTANT OBJECTS (weapons, tools, items, keys, vehicles, pickups):"
@@ -2680,6 +2811,15 @@ local function collectGameSnapshot()
         result[#result + 1] = "  NONE FOUND: no object in the scan had a weapon/item/tool-like name."
     else
         for _, line in ipairs(notables) do result[#result + 1] = line end
+    end
+
+    result[#result + 1] = "=================================================="
+    result[#result + 1] = "YOUR GUIS (your ScreenGuis and their UI elements, from "
+        .. "PlayerGui, gethui(), CoreGui and StarterGui):"
+    if #guiLines == 0 then
+        result[#result + 1] = "  No GUIs were found."
+    else
+        for _, line in ipairs(guiLines) do result[#result + 1] = line end
     end
 
     result[#result + 1] = "=================================================="
@@ -2753,7 +2893,10 @@ local function gameContext(limit)
         .. "their members. The REMOTES section lists descriptively named "
         .. "client/server remotes from ReplicatedStorage and friends; use them to "
         .. "understand what actions the game supports. Random/hash remote names were "
-        .. "deliberately skipped.\n"
+        .. "deliberately skipped. The YOUR GUIS section lists the script owner's "
+        .. "actual ScreenGuis and UI elements (buttons, labels, text boxes, "
+        .. "colours and text) from PlayerGui, gethui(), CoreGui and StarterGui; "
+        .. "use it when asked about the owner's interface.\n"
         .. tree
 end
 
@@ -4420,8 +4563,9 @@ addMessage("SYSTEM",
     "/graball grabs the game + every player for this session "
         .. "(survives MEM; cleared on re-execute). /cleargraball wipes it.", BLUE)
 addMessage("SYSTEM",
-    "/grabgame stores the explorer dump, teams and readable remotes for this "
-        .. "session (kept after MEM, cleared on re-execute). /rategame rates it, "
+    "/grabgame stores the explorer dump, your GUIs (PlayerGui, gethui(), "
+        .. "CoreGui, StarterGui), teams and readable remotes for this session "
+        .. "(kept after MEM, cleared on re-execute). /rategame rates it, "
         .. "/quizgame [topic] quizzes on it.", BLUE)
 addMessage("SYSTEM",
     "/rateavatar (player) or /rateava (player) rates an avatar 1-10. "
@@ -4472,3 +4616,4 @@ task.spawn(function()
 end)
 
 print("PRIVATE GROQ AI v18.6 loaded: GRABALL + GRABGAME + RATEGAME + RATEAVATAR + QUIZGAME")
+
