@@ -231,18 +231,25 @@ local QUIZ_SECONDS = 30
 local TRIVIA_SECONDS = 20
 local GLOBAL_SEND_GAP = 1.5
 local MAX_QUEUE = 12
-local GAME_MAX_NODES = 2500
-local GAME_MAX_DEPTH = 12
-local GAME_MAX_CHARS = 50000
--- How much of the snapshot is handed to the AI. The important-objects section
--- (weapons, tools, keys, vehicles, pickups) is printed FIRST, so trimming at
--- this limit can no longer hide the guns at the end of a big explorer dump.
-local GAME_CHAT_LIMIT = 14000
-local GAME_QUIZ_LIMIT = 20000
+-- FULL DEX-STYLE SNAPSHOT: the whole game is stored in session memory, with
+-- every instance path, property, attribute, full script source and remote.
+-- callProvider automatically shrinks this context if a free provider rejects
+-- its size, so the AI still answers instead of dying on "context too long".
+local GAME_MAX_NODES = 50000
+local GAME_MAX_DEPTH = 64
+local GAME_MAX_CHARS = 1000000
+local GAME_CHAT_LIMIT = 1000000
+local GAME_QUIZ_LIMIT = 1000000
 local GAME_ROOTS = {
-    "Workspace", "Players", "ReplicatedStorage", "Lighting", "StarterGui",
-    "StarterPack", "ServerStorage", "ServerScriptService", "Teams",
-    "SoundService", "ReplicatedFirst"
+    "Workspace", "Players", "ReplicatedStorage", "ReplicatedFirst", "Lighting",
+    "StarterGui", "StarterPack", "ServerStorage", "ServerScriptService",
+    "Teams", "SoundService", "CoreGui", "HttpService", "AssetService",
+    "InsertService", "MarketplaceService", "TeleportService", "BadgeService",
+    "DataStoreService", "MemoryStoreService", "MessagingService",
+    "PolicyService", "LocalizationService", "TextChatService", "Chat",
+    "VRService", "UserInputService", "ContextActionService", "RunService",
+    "TweenService", "Debris", "CollectionService", "PathfindingService",
+    "PhysicsService", "TestService", "LogService", "LanguageService"
 }
 
 local saved = {}
@@ -2353,12 +2360,45 @@ function session.isBringRequest(text)
     return move and owner and here
 end
 
+-- Handles one raw ACTION marker. It only performs ALLOW CMD remote say/bring_owner
+-- actions; owner markers, jump/move markers and malformed payloads are ignored.
+function session.consumeActionMarker(marker, remote, requester)
+    local payload = tostring(marker or ""):match("%b{}")
+    if not payload then return end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(payload)
+    end)
+    if not ok or type(data) ~= "table" or not remote then return end
+    local kind = tostring(data.type or ""):lower()
+    if kind == "say" or kind == "bring_owner" then
+        session.performOwnerAction(data, requester)
+    end
+end
+
+-- Strips every ACTION/END marker form from visible text, including single-angle,
+-- spaced, mixed-case and truncated markers. No marker text is ever shown, even
+-- when the reply is from a blocked outsider or ALLOW CMD is off.
+function session.stripActionMarkers(text, onMarker)
+    local piece = tostring(text or "")
+    local replace = onMarker or ""
+
+    -- Complete marker: <<ACTION>>...<<END>>, <ACTION>...<END>, mixed case, spaces.
+    piece = piece:gsub("<[%s<]*[Aa][Cc][Tt][Ii][Oo][Nn].-<[%s</]*[Ee][Nn][Dd][%s>]*>", replace)
+    -- Truncated marker with a JSON body but no END: remove the marker and its JSON.
+    piece = piece:gsub("<[%s<]*[Aa][Cc][Tt][Ii][Oo][Nn][%s>]*%s*%b{}", "")
+    -- Any remaining stray ACTION or END token.
+    piece = piece:gsub("<[%s<]*[Aa][Cc][Tt][Ii][Oo][Nn][%s>]*", "")
+    piece = piece:gsub("<[%s/]*[Ee][Nn][Dd][%s>]*", "")
+
+    return piece
+end
+
 function session.performAiActions(reply, requester)
     local text = tostring(reply or "")
     local isOwner = requester == player
-    -- Outsiders only get actions when ALLOW CMD is on.
+    -- Outsiders only get actions when ALLOW CMD is on. Stripping still happens
+    -- for everyone, so a rejected marker can never appear in public chat.
     local remote = not isOwner and allowCommands
-    if not isOwner and not remote then return text end
 
     -- A visible EXEC/COPY card always means MANUAL: the code waits for a click.
     -- AUTO runs Lua instantly and removes the code from the reply entirely, so
@@ -2376,32 +2416,27 @@ function session.performAiActions(reply, requester)
     local parts = {}
     for _, segment in ipairs(segments) do
         local piece = segment.text
+        -- Unauthorized outsiders cannot run a script, so its code must not be
+        -- shown in public chat either.
+        if segment.kind == "code" and not (isOwner or remote) then piece = "" end
         if segment.kind == "text" then
-            if hasCode then
-                piece = piece:gsub("<<ACTION>>.-<<END>>", "")
-            else
-                piece = piece:gsub("<<ACTION>>(.-)<<END>>", function(payload)
-                    local ok, data = pcall(function()
-                        return HttpService:JSONDecode(payload)
-                    end)
-                    if ok and type(data) == "table" and remote then
-                        local kind = tostring(data.type or ""):lower()
-                        if kind == "say" or kind == "bring_owner" then
-                            session.performOwnerAction(data, requester)
-                        end
-                    end
+            local onMarker
+            if not hasCode and remote then
+                onMarker = function(marker)
+                    session.consumeActionMarker(marker, remote, requester)
                     return ""
-                end)
+                end
             end
+            piece = session.stripActionMarkers(piece, onMarker)
+            segment.clean = piece
         end
-        if segment.kind == "text" then segment.clean = piece end
         parts[#parts + 1] = piece
     end
     local cleaned = table.concat(parts, " ")
 
     local ran, manual = 0, 0
     for _, segment in ipairs(segments) do
-        if segment.kind == "code" then
+        if segment.kind == "code" and (isOwner or remote) then
             if session.aiAutoExec then
                 if isOwner then
                     session.runAiCode(segment.text, requester)
@@ -2689,6 +2724,13 @@ local function callProviderModel(messages, maxTokens, model)
         max_tokens = maxTokens or 900
     })
 
+    -- A full Dex dump can be megabytes. Never hand that to the executor's HTTP
+    -- function in one go: report it as a context-length error so callProvider
+    -- trims the game data and retries with a body the provider can accept.
+    if #body > 250000 then
+        return nil, "Request too large: context length exceeds the local send limit."
+    end
+
     local lastError = httpFailureHint(provider, 0)
 
     for attempt = 1, 2 do
@@ -2807,6 +2849,53 @@ session.failoverModels = {
 -- Providers that must never be picked automatically.
 session.failoverSkip = {google = true}
 
+-- Full game dumps can be bigger than a free provider's context window. These
+-- helpers live on session (not as new top-level locals) because the main chunk
+-- is already at Luau's 200-register ceiling. They let callProvider retry the
+-- same question with progressively smaller game data instead of failing.
+function session.copyMessagesForRetry(messages)
+    local copy = {}
+    for index, message in ipairs(messages) do
+        copy[index] = {role = message.role, content = message.content}
+    end
+    return copy
+end
+
+function session.isContextLengthError(err)
+    local text = tostring(err or ""):lower()
+    return text:find("context length", 1, true) ~= nil
+        or text:find("maximum context", 1, true) ~= nil
+        or text:find("context window", 1, true) ~= nil
+        or text:find("too many tokens", 1, true) ~= nil
+        or text:find("prompt is too long", 1, true) ~= nil
+        or text:find("input is too long", 1, true) ~= nil
+        or text:find("request too large", 1, true) ~= nil
+        or text:find("token limit", 1, true) ~= nil
+end
+
+function session.shrinkGameData(messages)
+    local marker = "GAME DATA taken from the Roblox explorer"
+    local note = "\n...(snapshot trimmed to fit provider; ask a narrower question)"
+    for _, message in ipairs(messages) do
+        local content = tostring(message.content or "")
+        local startAt = content:find(marker, 1, true)
+        if startAt then
+            local prefix = content:sub(1, startAt - 1)
+            local body = content:sub(startAt)
+            local oldNote = body:find(note, 1, true)
+            if oldNote then body = body:sub(1, oldNote - 1) end
+            local oldTrim = body:find("\n...(snapshot truncated)", 1, true)
+            if oldTrim then body = body:sub(1, oldTrim - 1) end
+            if #body > 6000 then
+                local keep = math.max(4000, math.floor(#body * 0.55))
+                message.content = prefix .. body:sub(1, keep) .. note
+                return true
+            end
+        end
+    end
+    return false
+end
+
 -- Finds a model by exact id, then case-insensitive id, then a loose substring
 -- match, so a provider-side rename still lands on the intended model.
 function session.findModelIndex(provider, wantedId)
@@ -2903,8 +2992,11 @@ end
 local function callProvider(messages, maxTokens)
     local lastError
     local hops = 0
+    local shrinks = 0
+    local working = session.copyMessagesForRetry(messages)
 
     while session.alive do
+        local retrySmaller = false
         local provider = PROVIDERS[selectedProvider]
         local model = provider.models[selectedModel]
         if not model then
@@ -2920,27 +3012,39 @@ local function callProvider(messages, maxTokens)
         end
 
         for _, candidate in ipairs(candidates) do
-            local text, err, rejected = callProviderModel(messages, maxTokens, candidate)
+            local text, err, rejected = callProviderModel(working, maxTokens, candidate)
             if text then return text end
             lastError = err
+            -- A huge game dump can be rejected as "context too long" (or with a
+            -- plain HTTP 400). Trim it and ask the same question again before
+            -- giving up or burning through provider failover.
+            local tooBig = session.isContextLengthError(err)
+                or (rejected and tostring(err):find("HTTP 400", 1, true) ~= nil)
+            if tooBig and shrinks < 8 and session.shrinkGameData(working) then
+                shrinks = shrinks + 1
+                retrySmaller = true
+                break
+            end
             -- Only a rejected model (400/403) is worth retrying with another one.
             if not rejected then break end
         end
 
-        -- Out of tokens on this provider: hop forward and retry the request.
-        if quotaRecord(provider).exhausted then
-            hops = hops + 1
-            if hops > #PROVIDERS then return nil, lastError end
+        if not retrySmaller then
+            -- Out of tokens on this provider: hop forward and retry the request.
+            if quotaRecord(provider).exhausted then
+                hops = hops + 1
+                if hops > #PROVIDERS then return nil, lastError end
 
-            local switched, switchError = session.autoSwitchProvider(provider)
-            if switched then
-                lastError = nil
+                local switched, switchError = session.autoSwitchProvider(provider)
+                if switched then
+                    lastError = nil
+                else
+                    return nil, (lastError or "Provider is out of tokens.")
+                        .. " (" .. tostring(switchError) .. ")"
+                end
             else
-                return nil, (lastError or "Provider is out of tokens.")
-                    .. " (" .. tostring(switchError) .. ")"
+                return nil, lastError
             end
-        else
-            return nil, lastError
         end
     end
 
@@ -3099,6 +3203,37 @@ local function round1(n) return string.format("%.1f", tonumber(n) or 0) end
 
 local function describeInstance(inst)
     local bits = {inst.ClassName}
+
+    local function hex(color)
+        if typeof(color) ~= "Color3" then return "?" end
+        return string.format("%02X%02X%02X",
+            math.floor(color.R * 255 + 0.5),
+            math.floor(color.G * 255 + 0.5),
+            math.floor(color.B * 255 + 0.5))
+    end
+
+    -- Turns a property/attribute value into a short, safe text token.
+    local function valueText(value)
+        local kind = typeof(value)
+        if kind == "string" then
+            local text = value:gsub("[\r\n]+", " ")
+            if #text > 4000 then text = text:sub(1, 3997) .. "..." end
+            return '"' .. text .. '"'
+        elseif kind == "number" or kind == "boolean" then
+            return tostring(value)
+        elseif kind == "Vector3" or kind == "Vector2" or kind == "CFrame"
+            or kind == "UDim2" or kind == "UDim" or kind == "Ray"
+            or kind == "BrickColor" or kind == "EnumItem" then
+            return tostring(value)
+        elseif kind == "Color3" then
+            return hex(value)
+        elseif kind == "Instance" then
+            return "Instance(" .. tostring(value.ClassName) .. " "
+                .. tostring(value.Name) .. ")"
+        end
+        return nil
+    end
+
     local okSize, size = pcall(function() return inst.Size end)
     if okSize and typeof(size) == "Vector3" then
         bits[#bits + 1] = "size " .. round1(size.X) .. "x"
@@ -3109,18 +3244,13 @@ local function describeInstance(inst)
         bits[#bits + 1] = "pos " .. round1(pos.X) .. ","
             .. round1(pos.Y) .. "," .. round1(pos.Z)
     end
-    -- Material and colour make parts identifiable: a metal "Barrel" beside a
-    -- "Grip" is far more useful to the AI than an anonymous Part.
     local okMat, mat = pcall(function() return inst.Material end)
     if okMat and mat ~= nil then
         bits[#bits + 1] = "material " .. tostring(mat):gsub("Enum.Material%.", "")
     end
     local okColor, color = pcall(function() return inst.Color end)
     if okColor and typeof(color) == "Color3" then
-        bits[#bits + 1] = string.format("color #%02X%02X%02X",
-            math.floor(color.R * 255 + 0.5),
-            math.floor(color.G * 255 + 0.5),
-            math.floor(color.B * 255 + 0.5))
+        bits[#bits + 1] = "color " .. hex(color)
     end
     if inst:IsA("MeshPart") then
         local id = tostring(inst.MeshId):match("%d+")
@@ -3134,14 +3264,7 @@ local function describeInstance(inst)
     elseif inst:IsA("Sound") then
         local id = tostring(inst.SoundId):match("%d+")
         if id then bits[#bits + 1] = "sound " .. id end
-    elseif inst:IsA("Script") or inst:IsA("LocalScript") or inst:IsA("ModuleScript") then
-        local okSrc, src = pcall(function() return inst.Source end)
-        if okSrc and type(src) == "string" then
-            bits[#bits + 1] = #src .. " chars of code"
-        end
     elseif inst:IsA("Tool") then
-        -- A gun is a Tool whose children are named Handle, Barrel, Trigger,
-        -- etc. Listing those child names tells the AI what the tool actually is.
         local parts = {}
         for _, child in ipairs(inst:GetChildren()) do
             if #parts < 12 then parts[#parts + 1] = child.Name end
@@ -3153,6 +3276,51 @@ local function describeInstance(inst)
     elseif inst:IsA("ParticleEmitter") then
         bits[#bits + 1] = "particles"
     end
+
+    -- FULL script source, not just a character count.
+    if inst:IsA("Script") or inst:IsA("LocalScript") or inst:IsA("ModuleScript") then
+        local okSrc, src = pcall(function() return inst.Source end)
+        if okSrc and type(src) == "string" then
+            if #src > 200000 then
+                bits[#bits + 1] = "SOURCE (" .. #src .. " chars, first 200000):\n"
+                    .. src:sub(1, 200000) .. "\n...SOURCE TRUNCATED"
+            else
+                bits[#bits + 1] = "SOURCE (" .. #src .. " chars):\n"
+                    .. src .. "\nEND_SOURCE"
+            end
+        end
+    end
+
+    -- Attributes are the properties a game author adds at runtime.
+    local okAttrs, attrs = pcall(function() return inst:GetAttributes() end)
+    if okAttrs and type(attrs) == "table" then
+        for key, value in pairs(attrs) do
+            if #bits < 160 then
+                local text = valueText(value)
+                if text then bits[#bits + 1] = "attr " .. tostring(key) .. "=" .. text end
+            end
+        end
+    end
+
+    -- Every property the executor exposes. Wrapped in pcall because some
+    -- executors do not let pairs() walk an Instance directly; in that case the
+    -- named details above still survive.
+    pcall(function()
+        for key, value in pairs(inst) do
+            if #bits >= 160 then return end
+            if type(key) == "string" then
+                local lower = key:lower()
+                if lower ~= "name" and lower ~= "classname" and lower ~= "parent"
+                    and lower ~= "source" and lower ~= "children" then
+                    local text = valueText(value)
+                    if text and #text <= 1200 then
+                        bits[#bits + 1] = key .. "=" .. text
+                    end
+                end
+            end
+        end
+    end)
+
     return inst.Name .. " [" .. table.concat(bits, ", ") .. "]"
 end
 
@@ -3288,59 +3456,28 @@ end
 local function collectGameSnapshot()
     local lines, notables, remotes, teams = {}, {}, {}, {}
     local nodes, chars, visited, notableCount, remoteVisited = 0, 0, 0, 0, 0
-    local seen, seenRemote = {}, {}
-    -- A remote name is only useful to the AI when it describes an action.
-    -- Hashes, UUIDs and other random names are skipped so they cannot drown
-    -- out the real remotes (FireGun, BuyItem, SaveData, ...).
-    local REMOTE_HINT = {
-        "remote", "event", "function", "callback", "request", "response",
-        "fire", "shoot", "gun", "weapon", "damage", "hurt", "hit", "attack",
-        "health", "heal", "coin", "cash", "money", "buy", "sell", "shop",
-        "purchase", "inventory", "item", "equip", "drop", "pickup", "give",
-        "take", "save", "load", "data", "leader", "stat", "rank", "team",
-        "chat", "say", "message", "teleport", "spawn", "respawn", "kill",
-        "death", "vote", "admin", "command", "reward", "daily", "gift",
-        "trade", "player", "character", "effect", "sound", "animation",
-        "emote", "settings", "config", "update", "sync", "check", "validate",
-        "server", "client", "security", "key", "auth", "login"
-    }
+    local seen, seenRemote, walkSeen = {}, {}, {}
 
-    local function readableRemote(name)
-        if type(name) ~= "string" then return false end
-        local lower = name:lower()
-        if #lower < 4 or #lower > 80 then return false end
-        -- Pure hex strings (a3f8c2, deadbeef) and UUID-style names are random.
-        if lower:match("^%x+$") and #lower >= 8 then return false end
-        if lower:match("^%x+%-%x+") then return false end
-        local letters = select(2, lower:gsub("%a", ""))
-        local digits = select(2, lower:gsub("%d", ""))
-        if letters < 4 or digits > letters then return false end
-        if not lower:match("%a%a%a") then return false end
-        for _, word in ipairs(REMOTE_HINT) do
-            if lower:find(word, 1, true) then return true end
-        end
-        return false
-    end
-
+    -- EVERY remote is listed, including hashed or obfuscated names. The AI
+    -- gets the full path and class so it can still identify what it does.
     local function addRemote(inst, path)
-        if #remotes >= 150 or seenRemote[inst] then return end
+        if #remotes >= 5000 or seenRemote[inst] then return end
         seenRemote[inst] = true
-        if not readableRemote(inst.Name) then return end
         remotes[#remotes + 1] = "  " .. path .. " > " .. inst.ClassName
             .. " " .. inst.Name
     end
 
-    -- ReplicatedStorage is the main home of client/server remotes, but the
-    -- same pattern is used in ReplicatedFirst and StarterGui. Randomly named
-    -- ones are ignored by readableRemote above.
+    local function isRemote(inst)
+        return inst.ClassName == "RemoteEvent" or inst.ClassName == "RemoteFunction"
+            or inst.ClassName == "UnreliableRemoteEvent"
+            or inst.ClassName == "BindableEvent" or inst.ClassName == "BindableFunction"
+    end
+
     local function scanRemotes(inst, path, depth)
-        if not inst or depth > 10 or remoteVisited >= 5000
-            or #remotes >= 150 then return end
+        if not inst or depth > GAME_MAX_DEPTH or remoteVisited >= 50000
+            or #remotes >= 5000 then return end
         remoteVisited = remoteVisited + 1
-        if inst.ClassName == "RemoteEvent" or inst.ClassName == "RemoteFunction"
-            or inst.ClassName == "UnreliableRemoteEvent" then
-            addRemote(inst, path)
-        end
+        if isRemote(inst) then addRemote(inst, path) end
         for _, child in ipairs(inst:GetChildren()) do
             scanRemotes(child, path .. " > " .. child.Name, depth + 1)
         end
@@ -3423,7 +3560,7 @@ local function collectGameSnapshot()
     -- explorer dump is not filled with avatar body parts. Guns a player is
     -- holding or carrying are exactly what the old scan skipped completely.
     local function scanImportantOnly(inst, path, depth)
-        if not inst or visited >= 25000 or depth > 10 then return end
+        if not inst or visited >= GAME_MAX_NODES or depth > GAME_MAX_DEPTH then return end
         visited = visited + 1
         local here = path == "" and inst.Name or (path .. " > " .. inst.Name)
         if important(inst) then addImportant(inst, here) end
@@ -3433,48 +3570,30 @@ local function collectGameSnapshot()
     end
 
     local function walk(inst, depth, path)
-        if not inst or visited >= 25000
-            or inst.Name == "PrivateGroqAI_Circle" then return end
+        if not inst or visited >= GAME_MAX_NODES or walkSeen[inst]
+            or inst.Name == "PrivateGroqAI" or inst.Name == "PrivateGroqAI_Circle" then
+            return
+        end
+        walkSeen[inst] = true
         visited = visited + 1
         local here = path == "" and inst.Name or (path .. " > " .. inst.Name)
         -- Found important objects are stored BEFORE any budget check: even if
         -- the general dump is full, the gun/tool list keeps growing.
         if important(inst) then addImportant(inst, here) end
-        if inst.ClassName == "RemoteEvent" or inst.ClassName == "RemoteFunction"
-            or inst.ClassName == "UnreliableRemoteEvent" then
-            addRemote(inst, here)
-        end
+        if isRemote(inst) then addRemote(inst, here) end
 
         if nodes < GAME_MAX_NODES and chars < GAME_MAX_CHARS then
             if inst == Players then
                 local names = {}
                 for _, p in ipairs(Players:GetPlayers()) do names[#names + 1] = p.Name end
                 push(string.rep("  ", depth) .. "Players online: " .. table.concat(names, ", "))
-            elseif inst:IsA("Model") and Players:GetPlayerFromCharacter(inst) then
-                push(string.rep("  ", depth) .. "Character of " .. inst.Name
-                    .. " (held tools listed in IMPORTANT OBJECTS)")
             else
                 push(string.rep("  ", depth) .. describeInstance(inst))
             end
             nodes = nodes + 1
         end
 
-        -- Everything under a Player was already scanned by scanImportantOnly.
-        local parent = inst.Parent
-        local playerChild = parent and parent:IsA("Player")
-        if playerChild and (inst:IsA("Backpack") or inst:IsA("PlayerScripts")
-            or inst:IsA("PlayerGui")
-            or (inst:IsA("Model") and Players:GetPlayerFromCharacter(inst))) then
-            return
-        end
-
-        if depth >= GAME_MAX_DEPTH then
-            for _, child in ipairs(inst:GetChildren()) do
-                if important(child) then addImportant(child, here .. " > " .. child.Name) end
-            end
-            return
-        end
-
+        if depth >= GAME_MAX_DEPTH then return end
         for _, child in ipairs(inst:GetChildren()) do
             walk(child, depth + 1, here)
         end
@@ -3494,14 +3613,28 @@ local function collectGameSnapshot()
     end
 
     for _, serviceName in ipairs(GAME_ROOTS) do
-        local service = game:FindFirstChild(serviceName)
-        if service then walk(service, 0, "") end
+        local okService, service = pcall(function()
+            return game:GetService(serviceName)
+        end)
+        local root = okService and service or game:FindFirstChild(serviceName)
+        if root then walk(root, 0, "") end
+    end
+    -- Any service the executor exposes that is not in the list above.
+    for _, child in ipairs(game:GetChildren()) do
+        walk(child, 0, "")
     end
 
     collectTeams()
-    for _, rootName in ipairs({"ReplicatedStorage", "ReplicatedFirst", "StarterGui"}) do
-        local root = game:FindFirstChild(rootName)
-        if root then scanRemotes(root, rootName, 0) end
+    for _, serviceName in ipairs(GAME_ROOTS) do
+        local okService, service = pcall(function()
+            return game:GetService(serviceName)
+        end)
+        local root = okService and service or game:FindFirstChild(serviceName)
+        if root then scanRemotes(root, serviceName, 0) end
+    end
+    for _, p in ipairs(Players:GetPlayers()) do
+        local okGui, guiRoot = pcall(function() return p.PlayerGui end)
+        if okGui and guiRoot then scanRemotes(guiRoot, "Players > " .. p.Name .. " > PlayerGui", 0) end
     end
 
     local guiLines = session.collectGuiSnapshot()
@@ -3534,15 +3667,16 @@ local function collectGameSnapshot()
     end
 
     result[#result + 1] = "=================================================="
-    result[#result + 1] = "REMOTES (readable names only; random/hash names ignored):"
+    result[#result + 1] = "REMOTES (ALL remote events/functions, including hashed names):"
     if #remotes == 0 then
-        result[#result + 1] = "  No descriptively named remotes were found."
+        result[#result + 1] = "  No remotes were found."
     else
         for _, line in ipairs(remotes) do result[#result + 1] = line end
     end
 
     result[#result + 1] = "=================================================="
-    result[#result + 1] = "EXPLORER DUMP (" .. nodes .. " nodes shown, "
+    result[#result + 1] = "FULL EXPLORER DUMP (every path, property, attribute, full script "
+        .. "source and child; " .. nodes .. " nodes shown, "
         .. visited .. " objects scanned):"
     for _, line in ipairs(lines) do result[#result + 1] = line end
     return table.concat(result, "\n"), nodes
@@ -3565,6 +3699,7 @@ local function grabGame()
         players = names,
         tree = tree,
         nodes = nodes,
+        chars = #tree,
         collectedAt = os.time()
     }
     return gameSnapshot
@@ -3589,17 +3724,16 @@ local function gameContext(limit)
         .. "Place: " .. tostring(gameSnapshot.placeName)
         .. " (PlaceId " .. tostring(gameSnapshot.placeId) .. ")\n"
         .. "Players online: " .. table.concat(gameSnapshot.players or {}, ", ") .. "\n"
-        .. "The IMPORTANT OBJECTS section lists REAL weapons, tools and items found "
-        .. "in the game and in players' hands/backpacks. If objects are listed there, "
-        .. "the game DOES contain them - never claim the game has no guns or items "
-        .. "when that section lists them. The TEAMS section lists the real teams and "
-        .. "their members. The REMOTES section lists descriptively named "
-        .. "client/server remotes from ReplicatedStorage and friends; use them to "
-        .. "understand what actions the game supports. Random/hash remote names were "
-        .. "deliberately skipped. The YOUR GUIS section lists the script owner's "
-        .. "actual ScreenGuis and UI elements (buttons, labels, text boxes, "
-        .. "colours and text) from PlayerGui, gethui(), CoreGui and StarterGui; "
-        .. "use it when asked about the owner's interface.\n"
+        .. "Snapshot size: " .. tostring(gameSnapshot.chars or #tree) .. " characters, "
+        .. tostring(gameSnapshot.nodes or 0) .. " nodes.\n"
+        .. "This is a FULL DEX-STYLE dump: every scanned instance path, class, "
+        .. "property, attribute, full Script/LocalScript/ModuleScript source, "
+        .. "every RemoteEvent/RemoteFunction/Bindable (including hashed names), "
+        .. "teams, important objects and the owner's GUIs are included. Treat it "
+        .. "as the source of truth; never invent details that are not in it. If a "
+        .. "section is missing, the game or executor did not expose it. If the "
+        .. "snapshot was trimmed to fit a provider, ask the owner a narrower "
+        .. "question or run /grabgame again after changes.\n"
         .. tree
 end
 
@@ -4330,7 +4464,7 @@ local function handleCommand(message)
                 if speaker == player then
                     system = system .. session.actionPrompt()
                         .. session.liveStateContext()
-                elseif allowCommands then
+                elseif allowCommands and canCommand(speaker) then
                     system = system
                         .. " This player may control the owner: to make the owner say "
                         .. "something, end your reply with "
@@ -4340,7 +4474,7 @@ local function handleCommand(message)
                         .. "AI MODE is AUTO, or waits as an EXEC/COPY card in MANUAL. "
                         .. "They may also bring the owner to themselves with "
                         .. '<<ACTION>>{"type":"bring_owner","target":"' .. speaker.Name
-                        .. '"}<<END>>. Never emit owner movement markers for them.'
+                        .. '"}<<END>>. Those two marker types are the only ones allowed.'
                 else
                     system = system .. " Never emit any action marker."
                 end
@@ -4362,11 +4496,13 @@ local function handleCommand(message)
             if command == "grabgame" then
                 addMessage("GRABGAME", "Scanning the game explorer...", BLUE)
                 local snapshot = grabGame()
-                addMessage("GRABGAME", "Stored " .. snapshot.nodes .. " nodes from "
+                addMessage("GRABGAME", "Stored FULL dump: " .. snapshot.nodes
+                    .. " nodes, " .. tostring(snapshot.chars or 0) .. " chars from "
                     .. snapshot.placeName .. " (PlaceId " .. snapshot.placeId .. "). "
                     .. "Session only - cleared when the script is re-executed.", GREEN)
-                reply("Game snapshot saved (" .. snapshot.nodes
-                    .. " nodes). Ask me about the game, /rategame or /quizgame.")
+                reply("Full game dump saved (" .. snapshot.nodes .. " nodes, "
+                    .. tostring(snapshot.chars or 0) .. " chars). Ask me anything "
+                    .. "about the game, /rategame or /quizgame.")
                 return
             end
 
@@ -5033,14 +5169,16 @@ task.spawn(function()
                     -- /talk and the GUI, so "make me a GUI" builds a GUI.
                     system = system .. session.actionPrompt()
                         .. session.liveStateContext()
-                else
+                elseif allowCommands and canCommand(job.player) then
                     system = system
-                        .. " You may bring YOURSELF (the owner) to the person asking "
-                        .. "when they ask for the owner to come to them; end your reply "
-                        .. "with this exact marker: "
+                        .. " This player may ask for the owner to come to them; end your "
+                        .. "reply with this exact marker: "
                         .. '<<ACTION>>{"type":"bring_owner","target":"'
                         .. job.player.Name .. '"}<<END>> '
                         .. "Never move any other player."
+                else
+                    system = system
+                        .. " Never emit any action marker. Plain words cannot move anyone."
                 end
                 local messages = {{
                     role = "system",
@@ -5425,10 +5563,11 @@ addMessage("SYSTEM",
     "/graball grabs the game + every player for this session "
         .. "(survives MEM; cleared on re-execute). /cleargraball wipes it.", BLUE)
 addMessage("SYSTEM",
-    "/grabgame stores the explorer dump, your GUIs (PlayerGui, gethui(), "
-        .. "CoreGui, StarterGui), teams and readable remotes for this session "
-        .. "(kept after MEM, cleared on re-execute). /rategame rates it, "
-        .. "/quizgame [topic] quizzes on it.", BLUE)
+    "/grabgame stores a FULL Dex-style explorer dump: every instance path, "
+        .. "property, attribute, full script source, ALL remotes (including "
+        .. "hashed names), teams, important objects and your GUIs (PlayerGui, "
+        .. "gethui(), CoreGui, StarterGui). Session-only; cleared on re-execute. "
+        .. "The AI retries with smaller context if a provider rejects the size.", BLUE)
 addMessage("SYSTEM",
     "/rateavatar (player) or /rateava (player) rates an avatar 1-10. "
         .. "/badrate (player) roasts it 1-3, /goodrate (player) praises it 8-10.", GREEN)
