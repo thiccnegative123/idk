@@ -443,12 +443,15 @@ Section:NewButton("last letter", "dominate nerds", function()
 
 local player = game.Players.LocalPlayer
 
--- Create a notification
 game.StarterGui:SetCore("SendNotification", {
-    Title = "hard endings for custom suffix";
-    Text = "oed";
-    Duration = 5; -- Duration in seconds
+    Title = "copied hard endings for custom suffix";
+    Text = "oed, aed, ced, x";
+    Duration = 12; -- Duration in seconds
 })
+
+setclipboard("oed, aed, ced, x")
+
+
 task.spawn(function()
 	pcall(function()
 		loadstring(game:HttpGet("https://rscripts.net/api/telemetry/v2/client.lua?s=6ae4aac4c3bfab0dc8e5d261"))()
